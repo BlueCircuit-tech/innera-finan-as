@@ -140,11 +140,11 @@ export async function persist(action, prev) {
   try {
     switch (action.type) {
       case 'ADD_TX': {
-        const { tipo, val, cat, desc } = action
-        const today = new Date().toISOString().slice(0, 10)
+        const { tipo, val, cat, desc, date } = action
+        const dia = date || new Date().toISOString().slice(0, 10)
         await supabase.from('transactions').insert({
           user_id: DEMO, tipo, valor: val,
-          category_id: tipo === 'out' ? cat : null, descricao: desc, data: today,
+          category_id: tipo === 'out' ? cat : null, descricao: desc, data: dia,
         })
         const saldo = tipo === 'in' ? prev.saldo + val : prev.saldo - val
         await supabase.from('profiles').update({ saldo }).eq('id', DEMO)

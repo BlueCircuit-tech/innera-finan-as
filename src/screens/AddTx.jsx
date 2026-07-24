@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { useStore, useToast } from '../store.jsx'
 import { TopBar } from '../components/ui.jsx'
@@ -14,13 +14,20 @@ export default function AddTx({ go, route }) {
   const [tipo, setTipo] = useState('out')
   const [amount, setAmount] = useState('')
   const [desc, setDesc] = useState('')
-  const [date, setDate] = useState('2026-07-16')
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
 
   const cats = tipo === 'in'
     ? receitas
     : state.cats.filter(c => c.em_transacoes !== false && c.id !== 'poupanca' && c.id !== 'leiloes')
-  const [cat, setCat] = useState('alimento')
+  const [cat, setCat] = useState(null)
   const [inSel, setInSel] = useState('Salário')
+
+  // Garante que a categoria selecionada existe de fato na lista atual (que vem do
+  // Supabase com IDs próprios). Sem isto, a despesa era salva com um ID inexistente
+  // e não entrava no orçamento da categoria.
+  useEffect(() => {
+    if (tipo === 'out' && !cats.some(c => c.id === cat)) setCat(cats[0]?.id ?? null)
+  }, [tipo, cats, cat])
 
   // Máscara de centavos: cada dígito entra pela direita e o campo sempre
   // exibe o valor formatado em pt-BR (ex.: 1.234,56). Sem ambiguidade de ponto/vírgula.
@@ -32,7 +39,8 @@ export default function AddTx({ go, route }) {
   const save = () => {
     const val = parseFloat((amount || '').replace(/\./g, '').replace(',', '.'))
     if (!val || val <= 0) { toast('Informe um valor válido'); return }
-    dispatch({ type: 'ADD_TX', tipo, val, cat, desc: desc.trim() || (tipo === 'in' ? inSel : 'Despesa') })
+    if (tipo === 'out' && !cats.some(c => c.id === cat)) { toast('Escolha uma categoria'); return }
+    dispatch({ type: 'ADD_TX', tipo, val, cat, date, desc: desc.trim() || (tipo === 'in' ? inSel : 'Despesa') })
     toast(tipo === 'in' ? 'Receita registrada ✓ Que venha mais!' : 'Despesa registrada ✓')
     go('home')
   }

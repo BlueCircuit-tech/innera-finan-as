@@ -6,6 +6,13 @@ import {
 } from './data.js'
 import { fetchAll, persist } from './api.js'
 
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+// 'YYYY-MM-DD' -> '16 jul' (mesmo formato do resto do app)
+const fmtDia = iso => {
+  const d = new Date((iso || '') + 'T00:00:00')
+  return isNaN(d) ? '16 jul' : `${String(d.getDate()).padStart(2, '0')} ${MESES[d.getMonth()]}`
+}
+
 export const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 export const fmt0 = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 export const discount = l => Math.round((1 - l.lance / l.aval) * 100)
@@ -32,8 +39,8 @@ function reducer(s, a) {
     case 'HYDRATE':
       return { ...s, ...a.data }
     case 'ADD_TX': {
-      const { tipo, val, cat, desc } = a
-      const tx = { tipo, val, cat: tipo === 'in' ? 'renda' : cat, desc, data: '16 jul' }
+      const { tipo, val, cat, desc, date } = a
+      const tx = { tipo, val, cat: tipo === 'in' ? 'renda' : cat, desc, data: fmtDia(date) }
       let saldo = s.saldo, cats = s.cats
       if (tipo === 'in') saldo += val
       else {
