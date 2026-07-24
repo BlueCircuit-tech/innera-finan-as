@@ -22,6 +22,13 @@ export default function AddTx({ go, route }) {
   const [cat, setCat] = useState('alimento')
   const [inSel, setInSel] = useState('Salário')
 
+  // Máscara de centavos: cada dígito entra pela direita e o campo sempre
+  // exibe o valor formatado em pt-BR (ex.: 1.234,56). Sem ambiguidade de ponto/vírgula.
+  const onAmount = e => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 12)
+    setAmount(digits ? (parseInt(digits, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '')
+  }
+
   const save = () => {
     const val = parseFloat((amount || '').replace(/\./g, '').replace(',', '.'))
     if (!val || val <= 0) { toast('Informe um valor válido'); return }
@@ -42,7 +49,7 @@ export default function AddTx({ go, route }) {
         <div className="card">
           <div className="amount">
             <span className="cur">R$</span>
-            <input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="0,00" autoComplete="off" />
+            <input value={amount} onChange={onAmount} inputMode="numeric" placeholder="0,00" autoComplete="off" />
           </div>
 
           <div className="label">Categoria</div>
