@@ -2,6 +2,15 @@
 
 export const user = { nome: 'Paula', email: 'paula@email.com' }
 
+// Links externos oficiais
+export const LINKS = {
+  leiloes: 'https://globalequityleiloes.com/home',
+  instagram: 'https://www.instagram.com/paulaleiloeira?igsh=MTJreXhscnpwOHo1ag%3D%3D&utm_source=qr',
+  blog: 'https://paullaleiloeira.com/',
+  podcast: 'https://www.youtube.com/playlist?list=PLnrgsxAp5AfM4TtVgWwXuwoCqHI2cG1WO',
+}
+export const openExternal = url => window.open(url, '_blank', 'noopener,noreferrer')
+
 export const initialCats = [
   { id: 'moradia',  nome: 'Moradia',              ico: '🏠', plan: 1800, gasto: 1800,  em_transacoes: true },
   { id: 'alimento', nome: 'Alimentação',          ico: '🥗', plan: 1200, gasto: 986.4, em_transacoes: true },
@@ -118,7 +127,7 @@ export const bidHistory = {
 export const metodoInnera = [
   ['Organize cada real', 'Dê um destino para cada real que entra no mês.'],
   ['Crie sua reserva', 'Construa a tranquilidade que abre espaço para investir.'],
-  ['Invista com inteligência', 'Faça sua sobra render com estratégia e propósito.'],
+  ['Invista com inteligência', 'Faça sua reserva render com estratégia e propósito.'],
   ['Compre patrimônio', 'Use os leilões para comprar abaixo do valor de mercado.'],
   ['Multiplique sua liberdade', 'Transforme patrimônio em liberdade financeira.'],
 ]
@@ -131,7 +140,7 @@ export const quickLinks = [
 export const tracks = [
   {
     titulo: 'Do orçamento ao primeiro lance: sua jornada de patrimônio',
-    subtitulo: '4 aulas curtas sobre organizar o mês, criar sobra e participar do primeiro leilão com segurança.',
+    subtitulo: '4 aulas curtas sobre organizar o mês, criar reserva e participar do primeiro leilão com segurança.',
     emoji: '💡', total_aulas: 4, aula_atual: 1, progresso: 0, destaque: true,
   },
   {
@@ -149,16 +158,16 @@ export const articles = [
     <p>Antes de qualquer investimento vem a reserva. Ela é o colchão que te dá tranquilidade para investir sem medo — e para não precisar sacar no pior momento.</p>
     <h3>1. Quanto guardar</h3><p>Comece mirando de 3 a 6 meses dos seus gastos essenciais. Parece muito? Constância é o que importa: um pouco todo mês já muda o jogo.</p>
     <h3>2. Onde deixar</h3><p>A reserva precisa de liquidez e segurança — nada de deixá-la exposta a risco. É dinheiro para dormir tranquila, não para arriscar.</p>
-    <h3>3. Só então, invista</h3><p>Com a reserva formada, sua sobra mensal fica livre para construir patrimônio — inclusive nos leilões, comprando abaixo do valor de mercado.</p>`,
+    <h3>3. Só então, invista</h3><p>Com a reserva formada, sua reserva mensal fica livre para construir patrimônio — inclusive nos leilões, comprando abaixo do valor de mercado.</p>`,
   },
   {
     ico: '⚠️', tag: 'Orçamento', tempo: '5 min de leitura',
-    titulo: '5 erros que impedem você de fazer dinheiro sobrar no mês',
-    corpo: `<h1>5 erros que impedem a sobra</h1><div class="meta">Orçamento · 5 min de leitura</div>
-    <p>Sobrar dinheiro no fim do mês raramente é sorte — é método. Veja os cinco erros mais comuns que sabotam a sua sobra.</p>
+    titulo: '5 erros que impedem você de formar reserva todo mês',
+    corpo: `<h1>5 erros que impedem a reserva</h1><div class="meta">Orçamento · 5 min de leitura</div>
+    <p>Formar reserva no fim do mês raramente é sorte — é método. Veja os cinco erros mais comuns que sabotam a sua reserva.</p>
     <h3>1. Olhar só para o saldo da conta</h3><p>O saldo não sabe que a fatura vence semana que vem. Gaste olhando para a categoria, não para o extrato.</p>
-    <h3>2. Não dar destino a cada real</h3><p>Dinheiro sem destino evapora. Distribua tudo — inclusive a sobra — assim que o salário cai.</p>
-    <h3>3. Tratar a sobra como sobra</h3><p>Sobra planejada vira patrimônio. Trate-a como uma conta a pagar para o seu futuro, antes do lazer.</p>
+    <h3>2. Não dar destino a cada real</h3><p>Dinheiro sem destino evapora. Distribua tudo — inclusive a reserva — assim que o salário cai.</p>
+    <h3>3. Deixar a reserva para o fim</h3><p>Reserva planejada vira patrimônio. Trate-a como uma conta a pagar para o seu futuro, antes do lazer.</p>
     <h3>4. Ignorar os pequenos gastos</h3><p>Os "só R$ 20" somados são o que estoura o mês. Registre tudo — o app faz isso em segundos.</p>
     <h3>5. Desistir no primeiro deslize</h3><p>Furou o orçamento? Todo mês é um recomeço. Consistência vence perfeição.</p>`,
   },
@@ -168,7 +177,7 @@ export const articles = [
     corpo: `<h1>Entenda os leilões</h1><div class="meta">Leilões · 7 min de leitura</div>
     <p>Leilão não é cassino — é compra planejada com desconto. O segredo está em três etapas que acontecem <b>antes</b> do primeiro lance.</p>
     <h3>1. Leia o edital inteiro</h3><p>O edital diz se o imóvel está ocupado, quem paga dívidas anteriores e como funciona o pagamento. No Innera, a documentação de cada lote fica na tela de detalhes.</p>
-    <h3>2. Defina seu teto e não passe dele</h3><p>Calcule custos extras (comissão do leiloeiro, ITBI, reformas) e defina o valor máximo do lance com base na sua sobra acumulada — nunca no calor da disputa.</p>
+    <h3>2. Defina seu teto e não passe dele</h3><p>Calcule custos extras (comissão do leiloeiro, ITBI, reformas) e defina o valor máximo do lance com base na sua reserva acumulada — nunca no calor da disputa.</p>
     <h3>3. Comece pequeno</h3><p>Lotes de menor valor, como veículos e eletrônicos, são ótimos para aprender a dinâmica antes de partir para um imóvel.</p>`,
   },
   {
@@ -176,8 +185,8 @@ export const articles = [
     titulo: 'Dê um trabalho para cada real: o método que muda tudo',
     corpo: `<h1>Dê um trabalho para cada real</h1><div class="meta">Método Innera · 6 min de leitura</div>
     <p>A maioria de nós aprendeu a perguntar "quanto sobrou?" no fim do mês. O método Innera inverte a pergunta: <b>o que cada real vai fazer por você este mês?</b></p>
-    <h3>1. Todo real tem um destino</h3><p>Quando o salário cai, você distribui tudo entre as categorias: moradia, alimentação, lazer, reserva… e também a sua sobra para investir.</p>
+    <h3>1. Todo real tem um destino</h3><p>Quando o salário cai, você distribui tudo entre as categorias: moradia, alimentação, lazer, reserva… e também a sua reserva para investir.</p>
     <h3>2. Gaste olhando para a categoria</h3><p>O saldo da conta mente: ele não sabe que o aluguel vence semana que vem. A categoria sabe.</p>
-    <h3>3. A sobra é uma categoria</h3><p>Sobra planejada vira patrimônio. No Innera, ela tem tela própria e uma ponte direta para os leilões.</p>`,
+    <h3>3. A reserva é uma categoria</h3><p>Reserva planejada vira patrimônio. No Innera, ela tem tela própria e uma ponte direta para os leilões.</p>`,
   },
 ]

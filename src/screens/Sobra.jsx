@@ -16,10 +16,10 @@ export default function Sobra({ go }) {
 
   return (
     <div className="pb">
-      <TopBar title="Minha sobra" onBack={() => go('home')} />
+      <TopBar title="Minha reserva" onBack={() => go('home')} />
       <div className="pad">
         <div className="sobra-hero card">
-          <div className="eyebrow">Sobra de julho</div>
+          <div className="eyebrow">Reserva de julho</div>
           <div className="big num"><CountUp value={cur} /></div>
           <div className="muted">
             {diff >= 0
@@ -29,7 +29,7 @@ export default function Sobra({ go }) {
         </div>
 
         <div className="card">
-          <h4 className="serif">Evolução da sobra</h4>
+          <h4 className="serif">Evolução da reserva</h4>
           <div className="muted" style={{ fontSize: 12, marginBottom: 20 }}>Últimos 6 meses · valores livres após o orçamento</div>
           <div className="chart">
             {s.map(([label, v], i) => {
@@ -58,7 +58,7 @@ export default function Sobra({ go }) {
         <div className="card invite">
           <div className="tile lg"><Landmark size={22} className="goldc" /></div>
           <div className="grow">
-            <b className="serif">Faça sua sobra trabalhar</b>
+            <b className="serif">Faça sua reserva trabalhar</b>
             <span className="muted">Há leilões com lance mínimo dentro do seu valor disponível.</span>
           </div>
         </div>

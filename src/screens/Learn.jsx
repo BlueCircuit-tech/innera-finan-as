@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Search, Lightbulb, GraduationCap, FileText, Play, Mic, Star, ArrowUpRight, ChevronRight } from 'lucide-react'
 import { useStore, useToast } from '../store.jsx'
-import { quickLinks } from '../data.js'
+import { quickLinks, LINKS, openExternal } from '../data.js'
 import { Ring } from '../components/ui.jsx'
 import Thumb from '../components/Thumb.jsx'
 
@@ -15,6 +15,12 @@ export default function Learn({ go }) {
   const tracks = state.tracks || []
   const featured = tracks.find(t => t.destaque) || tracks[0]
   const cont = tracks.find(t => !t.destaque && t.progresso > 0) || tracks[1]
+
+  const quickAction = label => {
+    if (label === 'Artigos') return openExternal(LINKS.blog)
+    if (label === 'Podcasts') return openExternal(LINKS.podcast)
+    toast(`${label} em breve`)
+  }
 
   return (
     <div className="pb">
@@ -40,7 +46,7 @@ export default function Learn({ go }) {
           {quickLinks.map(([label, icon]) => {
             const I = ICONS[icon]
             return (
-              <button className="quick" key={label} onClick={() => toast(`${label} em breve`)}>
+              <button className="quick" key={label} onClick={() => quickAction(label)}>
                 <span className="qi"><I size={21} /></span>{label}
               </button>
             )
@@ -62,7 +68,7 @@ export default function Learn({ go }) {
           </>
         )}
 
-        <div className="sectiontitle"><h3>Artigos em destaque</h3><button className="link" onClick={() => toast('Veja todos abaixo ↓')}>Ver todos <ArrowUpRight size={14} /></button></div>
+        <div className="sectiontitle"><h3>Artigos em destaque</h3><button className="link" onClick={() => openExternal(LINKS.blog)}>Ver todos <ArrowUpRight size={14} /></button></div>
         {articles.map((a, i) => (
           <motion.button className="artrow" key={i} onClick={() => go('article', { articleIdx: i })}
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>

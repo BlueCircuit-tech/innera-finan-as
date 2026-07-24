@@ -53,7 +53,7 @@ export default function Budget({ go }) {
 
         <div className="principio">
           <Flower2 size={19} className="goldc" />
-          <span><b>Princípio Innera:</b> dê um trabalho para cada real. Quando todo o dinheiro tem destino — inclusive a sobra — sobra espaço para sonhar sem culpa.</span>
+          <span><b>Princípio Innera:</b> dê um trabalho para cada real. Quando todo o dinheiro tem destino — inclusive a reserva — fica espaço para sonhar sem culpa.</span>
         </div>
 
         <button className="btn" style={{ marginTop: 16 }} onClick={() => toast('Orçamento de julho salvo ✓')}>Salvar orçamento</button>

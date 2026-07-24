@@ -155,10 +155,10 @@
 .riskcell{flex:1;display:flex;align-items:center;gap:9px;background:var(--surface-2);border-radius:var(--r-sm);padding:11px 12px;box-shadow:inset 0 0 0 1px var(--line)}
 .riskcell .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--muted)}
 .riskcell .v{font-size:13px;font-weight:700;margin-top:1px}
-.iabox{display:flex;gap:11px;background:var(--surface-2);border-radius:var(--r-sm);padding:12px 14px;margin-top:12px;box-shadow:inset 0 0 0 1px var(--line)}
+.iabox{display:flex;align-items:center;gap:11px;background:var(--surface-2);border-radius:var(--r-sm);padding:12px 14px;margin-top:12px;box-shadow:inset 0 0 0 1px var(--line)}
 .iaico{width:32px;height:32px;flex:none;border-radius:10px;background:var(--leaf-soft);color:var(--leaf);display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--leaf-line)}
 .iabox .tt{font-size:11px;letter-spacing:.03em;text-transform:uppercase;font-weight:700;color:var(--leaf)}
-.iabox p{font-size:12px;color:var(--ink-2);line-height:1.5;margin:3px 0 5px}
+.iabox p{font-size:12px;color:var(--ink-2);line-height:1.5;margin:0}
 .iabox .more{font-size:12px;font-weight:700;color:var(--gold-2)}
 .lotcta{display:flex;flex-direction:column;gap:9px;margin-top:14px}
 .fav2{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:14px;background:var(--surface-2);
@@ -254,3 +254,6 @@
 .lotimg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
 .galimg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .aimg img{border-radius:inherit}
+
+/* logo (letra I) no lugar da florzinha do onboarding */
+.ob-logo{width:108px;height:108px;border-radius:26px;object-fit:cover;box-shadow:var(--sh-2),0 0 0 1px rgba(203,166,98,.25)}

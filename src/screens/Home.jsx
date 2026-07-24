@@ -51,7 +51,7 @@ export default function Home({ go }) {
         <div className="sc-ico"><Sparkles size={20} /></div>
         <div className="grow" style={{ textAlign: 'left' }}>
           <b className="num">{fmt0(sobra)}</b>
-          <span>Sua sobra deste mês, pronta para investir</span>
+          <span>Sua reserva deste mês, pronta para investir</span>
         </div>
         <span className="sc-go">Investir <ArrowRight size={15} /></span>
       </motion.button>

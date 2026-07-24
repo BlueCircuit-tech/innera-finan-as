@@ -35,7 +35,7 @@ export default function MyBids({ go }) {
               </button>
             )
           }) : (
-            <div className="empty"><Gavel size={38} className="muted" /><b className="serif">Você ainda não deu lances</b><p>Explore os leilões e use sua sobra para o primeiro lance.</p></div>
+            <div className="empty"><Gavel size={38} className="muted" /><b className="serif">Você ainda não deu lances</b><p>Explore os leilões e use sua reserva para o primeiro lance.</p></div>
           )
         ) : (
           state.favs.length ? state.lots.filter(l => state.favs.includes(l.id)).map(l => (

@@ -56,14 +56,14 @@ function Shell() {
             <div className="sub">Finanças & Leilões · protótipo</div>
           </div>
         </div>
-        <h1>Organize, <em>sobre</em> e invista.</h1>
+        <h1>Organize, <em>reserve</em> e invista.</h1>
         <p className="lead">
           Finanças pessoais para mulheres: orçamento no método “cada real com um trabalho”,
-          sobra mensal em destaque e uma ponte direta para investir em leilões.
+          reserva mensal em destaque e uma ponte direta para investir em leilões.
         </p>
         <div className="feats">
           {[
-            [Wallet, 'Orçamento consciente', 'Categorias vivas, gasto vs. disponível em tempo real.'],
+            [Wallet, 'Orçamento consciente', 'Categorias personalizadas, gastos vs. disponível em tempo real.'],
             [GraduationCap, 'Educação financeira', 'Trilhas e a metodologia Innera, passo a passo.'],
             [Gavel, 'Leilões integrados', 'Lotes abaixo do mercado, com análise e favoritos.'],
           ].map(([I, t, d]) => (

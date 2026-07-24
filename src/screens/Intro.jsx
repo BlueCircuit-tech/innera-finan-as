@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Gavel, Instagram } from 'lucide-react'
 import { useToast } from '../store.jsx'
+import { LINKS, openExternal } from '../data.js'
 
 const SLIDES = [
-  { art: '🌷', h: 'Organize suas finanças do seu jeito', p: 'Crie um orçamento simples por categorias e dê um trabalho para cada real que entra.' },
-  { art: '✨', h: 'Tenha sobra no fim do mês', p: 'Acompanhe sua sobra crescer mês a mês — sem culpa e sem aperto.' },
-  { art: '🏛️', h: 'Invista em leilões e construa patrimônio', p: 'Use sua sobra para arrematar imóveis, veículos e bens abaixo do valor de mercado.' },
+  { logo: true, h: 'Organize suas finanças do seu jeito', p: 'Crie um orçamento simples por categorias e dê um trabalho para cada real que entra.' },
+  { art: '✨', h: 'Tenha reserva no fim do mês', p: 'Acompanhe sua reserva crescer mês a mês — sem culpa e sem aperto.' },
+  { art: '🏛️', h: 'Invista em leilões e construa patrimônio', p: 'Use sua reserva para arrematar imóveis, veículos e bens abaixo do valor de mercado.' },
 ]
 
 export default function Intro({ go }) {
@@ -35,7 +36,7 @@ export default function Intro({ go }) {
           Innera
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-          Finanças · Sobra · Leilões
+          Finanças · Reserva · Leilões
         </motion.p>
         <div className="splash-dots"><i /><i /><i /></div>
       </div>
@@ -50,7 +51,9 @@ export default function Intro({ go }) {
           <motion.div className="ob-slide" key={slide}
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-            <div className="ob-art">{s.art}</div>
+            <div className="ob-art">
+              {s.logo ? <img className="ob-logo" src="/logo.png" alt="Innera" /> : s.art}
+            </div>
             <h2 className="serif">{s.h}</h2>
             <p>{s.p}</p>
           </motion.div>
@@ -80,17 +83,20 @@ export default function Intro({ go }) {
       </div>
       <div className="auth-body">
         {tab === 'signup' && (
-          <div className="field"><label>Nome completo</label><input placeholder="Seu nome" /></div>
+          <>
+            <div className="field"><label>Nome completo</label><input placeholder="Seu nome" /></div>
+            <div className="field"><label>Telefone</label><input type="tel" inputMode="tel" placeholder="(41) 99999-9999" /></div>
+          </>
         )}
-        <div className="field"><label>E-mail</label><input type="email" defaultValue="paula@email.com" placeholder="voce@email.com" /></div>
+        <div className="field"><label>E-mail</label><input type="email" defaultValue={tab === 'login' ? 'paula@email.com' : ''} placeholder="voce@email.com" /></div>
         <div className="field"><label>Senha</label><input type="password" placeholder="••••••••" /></div>
         <button className="btn" onClick={() => { toast('Bem-vinda, Paula! 💛'); go('home') }}>
           {tab === 'login' ? 'Entrar' : 'Criar minha conta'}
         </button>
-        <div className="auth-div">ou continue com</div>
+        <div className="auth-div">Conheça também</div>
         <div className="auth-social">
-          <button className="btn ghost" onClick={() => toast('Login social é ilustrativo neste protótipo')}>Google</button>
-          <button className="btn ghost" onClick={() => toast('Login social é ilustrativo neste protótipo')}>Facebook</button>
+          <button className="btn ghost" onClick={() => openExternal(LINKS.leiloes)}><Gavel size={16} /> Leilões</button>
+          <button className="btn ghost" onClick={() => openExternal(LINKS.instagram)}><Instagram size={16} /> Instagram</button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Star, Clock, TrendingDown, Shield, CalendarDays, Sparkles, ExternalLink, Heart } from 'lucide-react'
 import { useStore, useToast, fmt0, discount } from '../store.jsx'
+import { LINKS, openExternal } from '../data.js'
 
 function Fav({ id, className, children }) {
   const { state, dispatch } = useStore()
@@ -72,14 +73,10 @@ export default function LotCard({ lot, compact, onOpen, index = 0 }) {
             </div>
             <div className="iabox">
               <div className="iaico"><Sparkles size={16} /></div>
-              <div>
-                <div className="tt">Análise da IA</div>
-                <p>{lot.ia}</p>
-                <button className="more" onClick={e => { e.stopPropagation(); onOpen(lot.id) }}>Ver análise completa →</button>
-              </div>
+              <p>Excelente oportunidade para investir e construir patrimônio.</p>
             </div>
             <div className="lotcta">
-              <button className="btn" onClick={e => { e.stopPropagation(); onOpen(lot.id) }}>
+              <button className="btn" onClick={e => { e.stopPropagation(); openExternal(LINKS.leiloes) }}>
                 Ver no site e dar lance <ExternalLink size={16} />
               </button>
               <Fav id={lot.id} className="fav2">
