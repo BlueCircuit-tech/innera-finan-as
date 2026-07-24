@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Home as HomeIcon, Wallet, Plus, Gavel, GraduationCap, Signal, Wifi, BatteryFull } from 'lucide-react'
 import { StoreProvider, useToastMsg } from './store.jsx'
@@ -14,6 +14,7 @@ import LotDetail from './screens/LotDetail.jsx'
 import MyBids from './screens/MyBids.jsx'
 import Learn from './screens/Learn.jsx'
 import Article from './screens/Article.jsx'
+import Admin from './admin/Admin.jsx'
 
 const NAV = [
   ['home', 'Início', HomeIcon],
@@ -24,7 +25,7 @@ const NAV = [
 const APP_SCREENS = ['home', 'budget', 'auctions', 'learn', 'sobra', 'mybids', 'article', 'add']
 const NAV_TAB = { home: 'home', budget: 'budget', auctions: 'auctions', mybids: 'auctions', learn: 'learn', article: 'learn' }
 
-function Shell() {
+function Shell({ onAdmin }) {
   const [route, setRoute] = useState({ id: 'intro', prev: null })
   const toastMsg = useToastMsg()
 
@@ -34,7 +35,7 @@ function Shell() {
   const activeTab = NAV_TAB[route.id]
 
   const screens = {
-    intro: <Intro go={go} />,
+    intro: <Intro go={go} onAdmin={onAdmin} />,
     home: <Home go={go} />,
     budget: <Budget go={go} />,
     add: <AddTx go={go} route={route} />,
@@ -48,34 +49,6 @@ function Shell() {
 
   return (
     <div className="stage">
-      <aside className="pitch">
-        <div className="brand">
-          <div className="mk"><img src="/logo.png" alt="Innera" /></div>
-          <div>
-            <div className="eyebrow">Innera</div>
-            <div className="sub">Finanças & Leilões · protótipo</div>
-          </div>
-        </div>
-        <h1>Organize, <em>reserve</em> e invista.</h1>
-        <p className="lead">
-          Finanças pessoais para mulheres: orçamento no método “cada real com um trabalho”,
-          reserva mensal em destaque e uma ponte direta para investir em leilões.
-        </p>
-        <div className="feats">
-          {[
-            [Wallet, 'Orçamento consciente', 'Categorias personalizadas, gastos vs. disponível em tempo real.'],
-            [GraduationCap, 'Educação financeira', 'Trilhas e a metodologia Innera, passo a passo.'],
-            [Gavel, 'Leilões integrados', 'Lotes abaixo do mercado, com análise e favoritos.'],
-          ].map(([I, t, d]) => (
-            <div className="feat" key={t}>
-              <div className="fi"><I size={18} /></div>
-              <div><b>{t}</b><span>{d}</span></div>
-            </div>
-          ))}
-        </div>
-        <p className="disc">Protótipo navegável com dados fictícios. Nenhuma transação é real.</p>
-      </aside>
-
       <div className="device">
         <div className="notch" />
         <div className="statusbar">
@@ -128,9 +101,14 @@ function NavBtn({ active, label, Icon, onClick }) {
 }
 
 export default function App() {
+  const [view, setView] = useState(() =>
+    new URLSearchParams(window.location.search).has('admin') ? 'admin' : 'user'
+  )
   return (
     <StoreProvider>
-      <Shell />
+      {view === 'admin'
+        ? <Admin onExit={() => setView('user')} />
+        : <Shell onAdmin={() => setView('admin')} />}
     </StoreProvider>
   )
 }

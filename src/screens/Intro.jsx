@@ -10,7 +10,7 @@ const SLIDES = [
   { art: '🏛️', h: 'Invista em leilões e construa patrimônio', p: 'Use sua reserva para arrematar imóveis, veículos e bens abaixo do valor de mercado.' },
 ]
 
-export default function Intro({ go }) {
+export default function Intro({ go, onAdmin }) {
   const [step, setStep] = useState('splash') // splash | onboard | auth
   const [slide, setSlide] = useState(0)
   const [tab, setTab] = useState('login')
@@ -98,6 +98,9 @@ export default function Intro({ go }) {
           <button className="btn ghost" onClick={() => openExternal(LINKS.leiloes)}><Gavel size={16} /> Leilões</button>
           <button className="btn ghost" onClick={() => openExternal(LINKS.instagram)}><Instagram size={16} /> Instagram</button>
         </div>
+        {onAdmin && (
+          <button className="ghostlink" style={{ marginTop: 18 }} onClick={onAdmin}>Área administrativa</button>
+        )}
       </div>
     </div>
   )

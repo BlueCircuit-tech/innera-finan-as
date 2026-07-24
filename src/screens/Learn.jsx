@@ -13,12 +13,14 @@ export default function Learn({ go }) {
   const articles = state.articles || []
   const methodo = state.methodo || []
   const tracks = state.tracks || []
+  const media = state.media || []
   const featured = tracks.find(t => t.destaque) || tracks[0]
   const cont = tracks.find(t => !t.destaque && t.progresso > 0) || tracks[1]
+  const podcasts = media.filter(m => m.tipo === 'podcast')
 
   const quickAction = label => {
     if (label === 'Artigos') return openExternal(LINKS.blog)
-    if (label === 'Podcasts') return openExternal(LINKS.podcast)
+    if (label === 'Podcasts') return podcasts[0] ? openExternal(podcasts[0].url) : openExternal(LINKS.podcast)
     toast(`${label} em breve`)
   }
 
@@ -81,6 +83,24 @@ export default function Learn({ go }) {
             <ChevronRight size={18} className="muted" />
           </motion.button>
         ))}
+
+        {media.length > 0 && (
+          <>
+            <div className="sectiontitle"><h3>Podcasts &amp; vídeos</h3></div>
+            {media.map((m, i) => (
+              <motion.button className="artrow" key={m.id || i} onClick={() => openExternal(m.url)}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                <div className="aimg"><Thumb src={m.thumb_url} emoji={m.tipo === 'video' ? '▶️' : '🎙️'} alt={m.titulo} /></div>
+                <div className="grow">
+                  <div className="tag">{m.tipo === 'video' ? 'Vídeo' : 'Podcast'}</div>
+                  <h5 className="serif">{m.titulo}</h5>
+                  {m.descricao && <div className="m">{m.descricao}</div>}
+                </div>
+                <ChevronRight size={18} className="muted" />
+              </motion.button>
+            ))}
+          </>
+        )}
 
         <div className="sectiontitle"><h3>Metodologia Innera</h3><button className="link" onClick={() => toast('Metodologia completa em breve')}>Ver metodologia <ArrowUpRight size={14} /></button></div>
         <div className="metodo">

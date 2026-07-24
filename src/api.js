@@ -25,7 +25,7 @@ function fmtDate(iso) {
 export async function fetchAll() {
   if (!supabase) return null
   try {
-    const [profile, cats, txs, lots, photos, docs, bids, favs, arts, meth, tracks] = await Promise.all([
+    const [profile, cats, txs, lots, photos, docs, bids, favs, arts, meth, tracks, media] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', DEMO).single(),
       supabase.from('categories').select('*').eq('user_id', DEMO).order('posicao'),
       supabase.from('transactions').select('*').eq('user_id', DEMO).order('data', { ascending: false }),
@@ -37,6 +37,7 @@ export async function fetchAll() {
       supabase.from('articles').select('*').eq('publicado', true).order('posicao'),
       supabase.from('methodology_steps').select('*').order('passo'),
       supabase.from('learning_tracks').select('*').order('posicao'),
+      supabase.from('media_items').select('*').eq('publicado', true).order('posicao'),
     ])
     if (lots.error || cats.error) return null
 
@@ -121,6 +122,7 @@ export async function fetchAll() {
       ico: a.emoji, cover_url: a.cover_url, tag: a.tag, tempo: a.tempo_leitura, titulo: a.titulo, corpo: a.corpo_html,
     }))
     if (meth.data?.length) data.methodo = meth.data.map(m => [m.titulo, m.descricao])
+    data.media = media.error ? [] : (media.data || [])
     if (tracks.data?.length) data.tracks = tracks.data.map(t => ({
       titulo: t.titulo, subtitulo: t.subtitulo, emoji: t.emoji, cover_url: t.cover_url,
       total_aulas: t.total_aulas, aula_atual: t.aula_atual, progresso: t.progresso, destaque: t.destaque,
@@ -187,3 +189,60 @@ export async function persist(action, prev) {
 function groupBy(arr, key) {
   return arr.reduce((acc, x) => { (acc[x[key]] ||= []).push(x); return acc }, {})
 }
+
+/* =====================================================================
+   ADMIN — CRUD + upload de imagens (Storage)
+   ===================================================================== */
+function req() { if (!supabase) throw new Error('Supabase não configurado (.env).') }
+// PostgREST usa 'PGRST205' (tabela fora do schema cache); Postgres cru usa '42P01'
+function isMissingTable(error) {
+  return !!error && (error.code === 'PGRST205' || error.code === '42P01' ||
+    /could not find the table|does not exist/i.test(error.message || ''))
+}
+
+export async function uploadImage(bucket, file) {
+  req()
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const path = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { cacheControl: '3600', upsert: false })
+  if (error) throw error
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
+/* ---- Leilões ---- */
+export async function adminLots() {
+  req()
+  const [lots, photos, docs] = await Promise.all([
+    supabase.from('lots').select('*').order('id', { ascending: false }),
+    supabase.from('lot_photos').select('*').order('posicao'),
+    supabase.from('lot_documents').select('*').order('posicao'),
+  ])
+  if (lots.error) throw lots.error
+  const p = groupBy(photos.data || [], 'lot_id')
+  const d = groupBy(docs.data || [], 'lot_id')
+  return (lots.data || []).map(l => ({ ...l, photos: p[l.id] || [], documents: d[l.id] || [] }))
+}
+export async function createLot(row) { req(); const { data, error } = await supabase.from('lots').insert(row).select().single(); if (error) throw error; return data }
+export async function updateLot(id, row) { req(); const { error } = await supabase.from('lots').update(row).eq('id', id); if (error) throw error }
+export async function deleteLot(id) { req(); const { error } = await supabase.from('lots').delete().eq('id', id); if (error) throw error }
+export async function addLotPhoto(lotId, row) { req(); const { error } = await supabase.from('lot_photos').insert({ lot_id: lotId, ...row }); if (error) throw error }
+export async function deleteLotPhoto(id) { req(); const { error } = await supabase.from('lot_photos').delete().eq('id', id); if (error) throw error }
+
+/* ---- Artigos ---- */
+export async function adminArticles() { req(); const { data, error } = await supabase.from('articles').select('*').order('posicao'); if (error) throw error; return data || [] }
+export async function createArticle(row) { req(); const { error } = await supabase.from('articles').insert(row); if (error) throw error }
+export async function updateArticle(id, row) { req(); const { error } = await supabase.from('articles').update(row).eq('id', id); if (error) throw error }
+export async function deleteArticle(id) { req(); const { error } = await supabase.from('articles').delete().eq('id', id); if (error) throw error }
+
+/* ---- Mídia (podcasts / vídeos) — tabela media_items (ver supabase/admin.sql) ---- */
+export async function fetchMedia(tipo) {
+  req()
+  let q = supabase.from('media_items').select('*').order('posicao')
+  if (tipo) q = q.eq('tipo', tipo)
+  const { data, error } = await q
+  if (error) { if (isMissingTable(error)) return null; throw error }
+  return data || []
+}
+export async function createMedia(row) { req(); const { error } = await supabase.from('media_items').insert(row); if (error) throw error }
+export async function updateMedia(id, row) { req(); const { error } = await supabase.from('media_items').update(row).eq('id', id); if (error) throw error }
+export async function deleteMedia(id) { req(); const { error } = await supabase.from('media_items').delete().eq('id', id); if (error) throw error }

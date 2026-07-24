@@ -24,6 +24,7 @@ const initial = {
   articles: initialArticles,
   methodo: metodoInnera,
   tracks: initialTracks,
+  media: [],
 }
 
 function reducer(s, a) {
