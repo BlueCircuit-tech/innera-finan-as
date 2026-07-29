@@ -1,64 +1,58 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import { supabase } from './supabase.js'
 
 const AuthCtx = createContext(null)
+const LS_KEY = 'innera_user'
 
 /**
- * Autenticação real via Supabase Auth.
- * - signUp grava nome e telefone no metadata do usuário (options.data);
- *   o perfil na tabela `profiles` é criado no primeiro login (ver store.jsx).
- * - Se o Supabase não estiver configurado (.env), a app funciona em modo
- *   somente-leitura sem sessão.
+ * Autenticação simples (sem confirmação de e-mail).
+ * Cadastro e login batem nas funções app_signup / app_login do banco
+ * (ver supabase/auth.sql). A sessão é o usuário guardado no localStorage.
  */
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null') } catch { return null }
+  })
 
-  useEffect(() => {
-    if (!supabase) { setLoading(false); return }
-    let alive = true
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return
-      setSession(data.session)
-      setLoading(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => { alive = false; sub.subscription.unsubscribe() }
-  }, [])
+  const store = u => {
+    if (u) localStorage.setItem(LS_KEY, JSON.stringify(u))
+    else localStorage.removeItem(LS_KEY)
+    setUser(u)
+  }
 
   const signUp = useCallback(async ({ nome, telefone, email, password }) => {
     if (!supabase) throw new Error('Supabase não configurado (.env).')
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { nome: nome?.trim() || '', telefone: telefone?.trim() || '' } },
+    const { data, error } = await supabase.rpc('app_signup', {
+      p_nome: nome, p_email: email, p_telefone: telefone || '', p_senha: password,
     })
     if (error) throw error
-    // needsConfirm = usuário criado mas ainda sem sessão (confirmação por e-mail ligada)
-    return { needsConfirm: !data.session, session: data.session }
+    store(data)
+    return data
   }, [])
 
   const signIn = useCallback(async ({ email, password }) => {
     if (!supabase) throw new Error('Supabase não configurado (.env).')
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const { data, error } = await supabase.rpc('app_login', { p_email: email, p_senha: password })
     if (error) throw error
+    if (!data) throw new Error('INVALID_LOGIN')
+    store(data)
+    return data
   }, [])
 
-  const resetPassword = useCallback(async email => {
-    if (!supabase) throw new Error('Supabase não configurado (.env).')
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin,
+  const signOut = useCallback(() => store(null), [])
+
+  // atualiza campos do usuário logado (ex.: renda) mantendo o localStorage
+  const patchUser = useCallback(patch => {
+    setUser(u => {
+      if (!u) return u
+      const next = { ...u, ...patch }
+      localStorage.setItem(LS_KEY, JSON.stringify(next))
+      return next
     })
-    if (error) throw error
-  }, [])
-
-  const signOut = useCallback(async () => {
-    if (supabase) await supabase.auth.signOut()
-    setSession(null)
   }, [])
 
   return (
-    <AuthCtx.Provider value={{ session, user: session?.user || null, loading, signUp, signIn, signOut, resetPassword }}>
+    <AuthCtx.Provider value={{ user, session: user, loading: false, signUp, signIn, signOut, patchUser }}>
       {children}
     </AuthCtx.Provider>
   )

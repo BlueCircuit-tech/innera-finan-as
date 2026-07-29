@@ -52,15 +52,15 @@ mostra a imagem quando existir, senão cai no emoji. Cole no **SQL Editor** e RU
 
 ### Autenticação e usuários (obrigatório)
 
-1. Rode **`supabase/auth.sql`** no SQL Editor (idempotente). Ele adiciona a coluna
-   `telefone`, liga o **RLS por usuário** (cada conta só vê os próprios dados) e cria
-   as funções do admin `admin_list_users()` / `admin_delete_user()`.
-2. Em **Authentication → Providers → Email**, para testar sem fricção, desligue
-   **"Confirm email"** (autoconfirma o cadastro). Em produção, deixe ligado — o app
-   já trata a mensagem de "confirme seu e-mail".
+Rode **`supabase/auth.sql`** no SQL Editor (idempotente). Ele cria a tabela
+`app_users` e as funções de cadastro/login (`app_signup` / `app_login`), a de renda
+(`app_update_renda`) e as do admin (`admin_list_users` / `admin_update_user` /
+`admin_delete_user`).
 
-O cadastro grava **nome, e-mail e telefone**. O perfil e as categorias padrão são
-criados automaticamente no primeiro login (`src/api.js → ensureUserSetup`).
+Autenticação **simples, sem confirmação de e-mail**: o cadastro grava nome, e-mail,
+telefone e senha (com hash **bcrypt** no banco — a senha nunca sai do banco) e cria as
+categorias padrão. O login confere e-mail + senha. A sessão fica no `localStorage`.
+Não há e-mail de confirmação nem limite de envio.
 
 ### Duas visões
 

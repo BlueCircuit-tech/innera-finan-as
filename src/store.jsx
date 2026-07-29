@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useState, useCallback, useEffect, useMemo } from 'react'
-import { fetchAll, persist, ensureUserSetup } from './api.js'
+import { fetchAll, persist } from './api.js'
 import { useAuth } from './auth.jsx'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -56,6 +56,15 @@ function reducer(s, a) {
   switch (a.type) {
     case 'HYDRATE': return { ...s, ...a.data }
     case 'RESET': return EMPTY
+    case 'SET_USER':
+      return {
+        ...s,
+        user: {
+          id: a.user.id, nome: a.user.nome, email: a.user.email,
+          telefone: a.user.telefone, avatar_emoji: a.user.avatar_emoji || '👩🏻',
+        },
+        renda: Number(a.user.renda) || 0,
+      }
     case 'ADD_TX': {
       const { tipo, val, cat, desc, date } = a
       const tx = { id: a.id, tipo, val, cat: tipo === 'in' ? 'renda' : cat, desc, iso: date, data: fmtDia(date) }
@@ -85,19 +94,23 @@ const ToastCtx = createContext(null)
 
 let toastTimer
 export function StoreProvider({ children }) {
-  const { user } = useAuth()
+  const { user, patchUser } = useAuth()
   const userId = user?.id || null
   const [state, baseDispatch] = useReducer(reducer, EMPTY)
   const [toastMsg, setToastMsg] = useState(null)
   const [loadingData, setLoadingData] = useState(false)
 
-  // (re)carrega os dados quando o usuário logado muda
+  // dados de identidade/renda vêm do login
+  useEffect(() => {
+    if (user) baseDispatch({ type: 'SET_USER', user })
+  }, [user])
+
+  // (re)carrega as coleções quando o usuário logado muda
   useEffect(() => {
     let alive = true
     if (!userId) { baseDispatch({ type: 'RESET' }); return }
     setLoadingData(true)
     ;(async () => {
-      await ensureUserSetup(user)
       const data = await fetchAll(userId)
       if (alive && data) baseDispatch({ type: 'HYDRATE', data })
       if (alive) setLoadingData(false)
@@ -108,8 +121,9 @@ export function StoreProvider({ children }) {
   // dispatch com persistência best-effort no Supabase (usa o estado anterior + usuário atual)
   const dispatch = useCallback(action => {
     baseDispatch(action)
+    if (action.type === 'SET_RENDA') patchUser({ renda: action.val })
     persist(action, state, userId)
-  }, [state, userId])
+  }, [state, userId, patchUser])
 
   const toast = useCallback(msg => {
     setToastMsg({ msg, id: Math.random() })

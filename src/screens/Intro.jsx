@@ -16,7 +16,7 @@ export default function Intro({ onAdmin }) {
   const [slide, setSlide] = useState(0)
   const [tab, setTab] = useState('login')
   const toast = useToast()
-  const { signIn, signUp, resetPassword } = useAuth()
+  const { signIn, signUp } = useAuth()
 
   // campos do formulário
   const [nome, setNome] = useState('')
@@ -40,15 +40,10 @@ export default function Intro({ onAdmin }) {
     try {
       if (tab === 'login') {
         await signIn({ email, password: senha })
-        // sessão muda -> App troca para o app automaticamente
+        // login ok -> App troca para o app automaticamente
       } else {
-        const { needsConfirm } = await signUp({ nome, telefone, email, password: senha })
-        if (needsConfirm) {
-          toast('Enviamos um e-mail de confirmação. Confirme para entrar 💛')
-          setTab('login'); setSenha('')
-        } else {
-          toast(`Bem-vinda, ${nome.trim()}! 💛`)
-        }
+        await signUp({ nome, telefone, email, password: senha })
+        toast(`Bem-vinda, ${nome.trim()}! 💛`)
       }
     } catch (e) {
       toast(traduzErro(e?.message))
@@ -58,12 +53,6 @@ export default function Intro({ onAdmin }) {
   }
 
   const onTelefone = e => setTelefone(maskPhone(e.target.value))
-
-  const recuperar = async () => {
-    if (!email.trim()) { toast('Digite seu e-mail para recuperar a senha'); return }
-    try { await resetPassword(email); toast('Enviamos um link de recuperação para o seu e-mail') }
-    catch (e) { toast(traduzErro(e?.message)) }
-  }
 
   if (step === 'splash')
     return (
@@ -137,9 +126,6 @@ export default function Intro({ onAdmin }) {
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={onEnter} placeholder="voce@email.com" /></div>
         <div className="field"><label>Senha</label>
           <input type="password" value={senha} onChange={e => setSenha(e.target.value)} onKeyDown={onEnter} placeholder="••••••••" /></div>
-        {tab === 'login' && (
-          <button className="ghostlink" style={{ marginBottom: 6 }} onClick={recuperar}>Esqueci minha senha</button>
-        )}
         <button className="btn" onClick={submit} disabled={busy}>
           {busy ? <><Loader2 size={16} className="spin" /> Aguarde…</> : (tab === 'login' ? 'Entrar' : 'Criar minha conta')}
         </button>
@@ -167,12 +153,12 @@ function maskPhone(v) {
 
 function traduzErro(msg = '') {
   const m = msg.toLowerCase()
-  if (m.includes('rate limit')) return 'Muitas tentativas agora há pouco. Aguarde alguns minutos e tente de novo.'
-  if (m.includes('invalid login')) return 'E-mail ou senha incorretos'
-  if (m.includes('already registered') || m.includes('already been registered')) return 'Este e-mail já tem conta. Faça login.'
-  if (m.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar (ou desligue a confirmação no Supabase)'
-  if (m.includes('invalid') && m.includes('email')) return 'E-mail inválido'
-  if (m.includes('password')) return 'Senha inválida (mínimo 6 caracteres)'
+  if (m.includes('invalid_login')) return 'E-mail ou senha incorretos'
+  if (m.includes('email_exists')) return 'Este e-mail já tem conta. Faça login.'
+  if (m.includes('senha_curta')) return 'A senha precisa de ao menos 6 caracteres'
+  if (m.includes('nome_obrigatorio')) return 'Informe seu nome'
+  if (m.includes('email_obrigatorio')) return 'Informe seu e-mail'
+  if (m.includes('could not find') && m.includes('app_')) return 'Configuração pendente: rode supabase/auth.sql no Supabase'
   if (m.includes('supabase não configurado')) return msg
   return msg || 'Algo deu errado. Tente novamente.'
 }

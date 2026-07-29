@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js'
-import { DEFAULT_CATS } from './data.js'
 
 const PH = ['ph-a', 'ph-b', 'ph-c', 'ph-d', 'ph-e']
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -20,43 +19,12 @@ function fmtDate(iso) {
   return `${String(d.getDate()).padStart(2, '0')} ${MESES[d.getMonth()]}`
 }
 
-/* ---- Garante perfil + categorias padrão no primeiro acesso do usuário ----
-   Roda no login. Assim funciona mesmo sem trigger no banco (confirmação por
-   e-mail cria o usuário fora do navegador). Idempotente. */
-export async function ensureUserSetup(user) {
-  if (!supabase || !user) return
-  const { data: prof } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
-  if (prof) return
-  const meta = user.user_metadata || {}
-  const base = {
-    id: user.id,
-    nome: (meta.nome || '').trim() || (user.email || '').split('@')[0],
-    email: user.email,
-    renda: 0,
-    saldo: 0,
-    avatar_emoji: '👩🏻',
-  }
-  // tenta com telefone; se a coluna ainda não existir no banco, grava sem ela
-  let ins = await supabase.from('profiles').insert({ ...base, telefone: (meta.telefone || '').trim() || null })
-  if (ins.error && /telefone/i.test(ins.error.message || '')) {
-    ins = await supabase.from('profiles').insert(base)
-  }
-  if (ins.error) { console.warn('[Innera] criar perfil falhou:', ins.error.message); return }
-
-  const cats = DEFAULT_CATS.map(c => ({
-    id: crypto.randomUUID(), user_id: user.id,
-    nome: c.nome, emoji: c.emoji, planejado: 0, gasto: 0, posicao: c.posicao, em_transacoes: c.em_transacoes,
-  }))
-  const { error } = await supabase.from('categories').insert(cats)
-  if (error) console.warn('[Innera] criar categorias falhou:', error.message)
-}
-
-/* ---- READ: busca tudo do usuário + conteúdo público, mapeia p/ o app ---- */
+/* ---- READ: busca tudo do usuário + conteúdo público, mapeia p/ o app ----
+   Nome/renda vêm do login (auth.jsx); aqui buscamos só as coleções. */
 export async function fetchAll(userId) {
   if (!supabase || !userId) return null
   try {
-    const [profile, cats, txs, lots, photos, docs, bids, favs, arts, meth, tracks, media] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    const [cats, txs, lots, photos, docs, bids, favs, arts, meth, tracks, media] = await Promise.all([
       supabase.from('categories').select('*').eq('user_id', userId).order('posicao'),
       supabase.from('transactions').select('*').eq('user_id', userId).order('data', { ascending: false }),
       supabase.from('lots').select('*').order('id'),
@@ -107,15 +75,6 @@ export async function fetchAll(userId) {
     }))
 
     const data = {
-      user: {
-        id: userId,
-        nome: profile.data?.nome || 'Você',
-        email: profile.data?.email,
-        telefone: profile.data?.telefone,
-        avatar_url: profile.data?.avatar_url,
-        avatar_emoji: profile.data?.avatar_emoji || '👩🏻',
-      },
-      renda: Number(profile.data?.renda ?? 0),
       cats: mappedCats,
       txs: mappedTxs,
       lots: mappedLots,
@@ -162,7 +121,7 @@ export async function persist(action, prev, userId) {
         break
       }
       case 'SET_RENDA': {
-        await supabase.from('profiles').update({ renda: action.val }).eq('id', userId)
+        await supabase.rpc('app_update_renda', { uid: userId, val: action.val })
         break
       }
       case 'TOGGLE_FAV': {
