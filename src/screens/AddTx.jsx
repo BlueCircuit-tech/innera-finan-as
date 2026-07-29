@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { useStore, useToast } from '../store.jsx'
 import { TopBar } from '../components/ui.jsx'
+import MoneyInput from '../components/MoneyInput.jsx'
 
 const receitas = [
   { id: 'renda', nome: 'Salário', ico: '💼' }, { id: 'renda', nome: 'Freela', ico: '🎨' },
@@ -12,7 +13,7 @@ export default function AddTx({ go, route }) {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const [tipo, setTipo] = useState('out')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(0)
   const [desc, setDesc] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
 
@@ -29,18 +30,11 @@ export default function AddTx({ go, route }) {
     if (tipo === 'out' && !cats.some(c => c.id === cat)) setCat(cats[0]?.id ?? null)
   }, [tipo, cats, cat])
 
-  // Máscara de centavos: cada dígito entra pela direita e o campo sempre
-  // exibe o valor formatado em pt-BR (ex.: 1.234,56). Sem ambiguidade de ponto/vírgula.
-  const onAmount = e => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 12)
-    setAmount(digits ? (parseInt(digits, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '')
-  }
-
   const save = () => {
-    const val = parseFloat((amount || '').replace(/\./g, '').replace(',', '.'))
+    const val = Number(amount)
     if (!val || val <= 0) { toast('Informe um valor válido'); return }
     if (tipo === 'out' && !cats.some(c => c.id === cat)) { toast('Escolha uma categoria'); return }
-    dispatch({ type: 'ADD_TX', tipo, val, cat, date, desc: desc.trim() || (tipo === 'in' ? inSel : 'Despesa') })
+    dispatch({ type: 'ADD_TX', id: crypto.randomUUID(), tipo, val, cat, date, desc: desc.trim() || (tipo === 'in' ? inSel : 'Despesa') })
     toast(tipo === 'in' ? 'Receita registrada ✓ Que venha mais!' : 'Despesa registrada ✓')
     go('home')
   }
@@ -55,10 +49,8 @@ export default function AddTx({ go, route }) {
         </div>
 
         <div className="card">
-          <div className="amount">
-            <span className="cur">R$</span>
-            <input value={amount} onChange={onAmount} inputMode="numeric" placeholder="0,00" autoComplete="off" />
-          </div>
+          <MoneyInput big value={amount} onChange={setAmount} autoFocus />
+
 
           <div className="label">Categoria</div>
           <div className="catgrid">

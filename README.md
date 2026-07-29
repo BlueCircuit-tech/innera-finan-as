@@ -1,6 +1,8 @@
 # Innera — Finanças & Leilões (APP PAULA)
 
-Protótipo navegável de um app de finanças pessoais orientado ao público feminino, com ponte para investimento em leilões via **inneraleiloes.com.br**. Identidade visual em **verde profundo com detalhes em dourado**, 100% dados mockados — nenhuma transação é real.
+App de finanças pessoais orientado ao público feminino, com ponte para investimento em leilões via **inneraleiloes.com.br**. Identidade visual em **verde profundo com detalhes em dourado**.
+
+**Tudo funciona via Supabase (CRUD real):** cada usuária cria sua conta (Supabase Auth) e tem suas próprias categorias, transações e favoritos. O **saldo** e o **gasto por categoria** são sempre **calculados a partir das transações** — não há valor "guardado" que possa desencontrar. Existe também um **painel administrativo** (duas visões) para gerenciar leilões, conteúdos e **usuários** (nome, e-mail, telefone).
 
 ## Stack
 
@@ -30,7 +32,10 @@ src/
   main.jsx            entrada
   App.jsx             moldura do device, navegação e nav inferior
   store.jsx           estado global (reducer) + helpers de formatação + toast
-  data.js             dados mockados (categorias, lotes, artigos, metodologia)
+  auth.jsx            provider do Supabase Auth (cadastro/login/logout)
+  api.js              CRUD com Supabase (leitura escopada ao usuário + admin)
+  data.js             conteúdo estático de UI (links, categorias padrão)
+  components/MoneyInput.jsx  campo de dinheiro com máscara de centavos (pt-BR)
   styles.css          design system (tokens, primitivos)
   screens.css         estilos específicos de tela
   components/         ui.jsx (CountUp, Meter, Ring, Sheet, Toast…), LotCard.jsx
@@ -42,9 +47,27 @@ supabase/init.sql     schema + storage (upload de imagens) + RLS + seed
 ## Banco de dados (Supabase)
 
 `supabase/init.sql` cria as tabelas, os buckets de Storage para upload de imagens
-e popula tudo com os dados atuais (fictícios). Cada entidade tem `emoji` (placeholder)
-e uma coluna `*_url` — mostre a imagem quando existir, senão caia no emoji. Cole o
-arquivo no **SQL Editor do Supabase** e clique em RUN (é idempotente).
+e popula o conteúdo. Cada entidade tem `emoji` (placeholder) e uma coluna `*_url` —
+mostra a imagem quando existir, senão cai no emoji. Cole no **SQL Editor** e RUN.
+
+### Autenticação e usuários (obrigatório)
+
+1. Rode **`supabase/auth.sql`** no SQL Editor (idempotente). Ele adiciona a coluna
+   `telefone`, liga o **RLS por usuário** (cada conta só vê os próprios dados) e cria
+   as funções do admin `admin_list_users()` / `admin_delete_user()`.
+2. Em **Authentication → Providers → Email**, para testar sem fricção, desligue
+   **"Confirm email"** (autoconfirma o cadastro). Em produção, deixe ligado — o app
+   já trata a mensagem de "confirme seu e-mail".
+
+O cadastro grava **nome, e-mail e telefone**. O perfil e as categorias padrão são
+criados automaticamente no primeiro login (`src/api.js → ensureUserSetup`).
+
+### Duas visões
+
+- **Usuário** — o app de finanças (login/cadastro, orçamento, transações, leilões).
+- **Admin** — acesse com `?admin` na URL ou pelo link "Área administrativa" na tela de
+  login (senha em `VITE_ADMIN_PASSWORD`, padrão `innera2026`). Abas: **Usuários**
+  (listar/excluir com nome, e-mail e telefone), Leilões, Artigos e Aprender.
 
 ## Telas incluídas no protótipo
 
@@ -65,9 +88,10 @@ arquivo no **SQL Editor do Supabase** e clique em RUN (é idempotente).
 
 Histórico de transações completo (6), Relatórios (11), Perfil (12), Configurações (13), Notificações (15) e Ajuda/Suporte (16) — documentados no briefing para a fase de desenvolvimento.
 
-## Interatividade mockada
+## Interatividade (dados reais via Supabase)
 
-- Dar lance atualiza o lance atual, o histórico e o status em "Meus Lances"
-- Registrar transação atualiza saldo, gasto da categoria e lista de últimas transações
-- Ajustar orçamento recalcula "a alocar" em tempo real
-- Favoritar sincroniza feed, detalhe e aba Favoritos
+- Registrar transação insere no banco; **saldo** e **gasto da categoria** são
+  recalculados a partir das transações (entradas − saídas)
+- Ajustar orçamento (renda e planejado por categoria) recalcula "a alocar" em tempo real
+- Favoritar sincroniza feed, detalhe e aba Favoritos, persistindo no banco
+- Todos os valores em dinheiro usam o `MoneyInput` (máscara de centavos pt-BR)

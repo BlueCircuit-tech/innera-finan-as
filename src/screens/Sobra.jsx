@@ -7,12 +7,13 @@ import { TopBar, CountUp } from '../components/ui.jsx'
 export default function Sobra({ go }) {
   const { state } = useStore()
   const s = state.sobras
-  const cur = s[s.length - 1][1]
-  const prev = s[s.length - 2][1]
+  const has = s.length > 0
+  const cur = has ? s[s.length - 1][1] : 0
+  const prev = has && s.length > 1 ? s[s.length - 2][1] : 0
   const diff = cur - prev
-  const max = Math.max(...s.map(x => x[1]))
+  const max = has ? Math.max(...s.map(x => x[1]), 1) : 1
   const total = s.reduce((a, x) => a + x[1], 0)
-  const [active, setActive] = useState(s.length - 1)
+  const [active, setActive] = useState(Math.max(0, s.length - 1))
 
   return (
     <div className="pb">
@@ -50,7 +51,7 @@ export default function Sobra({ go }) {
           <div className="chart-foot">
             <span>Total acumulado: <b className="num goldc">{fmt0(total)}</b></span>
             <span className={diff >= 0 ? 'leafc' : 'critc'}>
-              <TrendingUp size={13} /> {diff >= 0 ? '+' : '−'}{Math.round(Math.abs(diff) / prev * 100)}% vs. mês anterior
+              <TrendingUp size={13} /> {diff >= 0 ? '+' : '−'}{prev > 0 ? Math.round(Math.abs(diff) / prev * 100) : 0}% vs. mês anterior
             </span>
           </div>
         </div>

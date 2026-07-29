@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Gavel, Instagram } from 'lucide-react'
+import { ArrowRight, Gavel, Instagram, Loader2 } from 'lucide-react'
 import { useToast } from '../store.jsx'
+import { useAuth } from '../auth.jsx'
 import { LINKS, openExternal } from '../data.js'
 
 const SLIDES = [
@@ -10,11 +11,19 @@ const SLIDES = [
   { art: '🏛️', h: 'Invista em leilões e construa patrimônio', p: 'Use sua reserva para arrematar imóveis, veículos e bens abaixo do valor de mercado.' },
 ]
 
-export default function Intro({ go, onAdmin }) {
+export default function Intro({ onAdmin }) {
   const [step, setStep] = useState('splash') // splash | onboard | auth
   const [slide, setSlide] = useState(0)
   const [tab, setTab] = useState('login')
   const toast = useToast()
+  const { signIn, signUp, resetPassword } = useAuth()
+
+  // campos do formulário
+  const [nome, setNome] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (step === 'splash') {
@@ -22,6 +31,39 @@ export default function Intro({ go, onAdmin }) {
       return () => clearTimeout(t)
     }
   }, [step])
+
+  const submit = async () => {
+    if (!email.trim() || !senha) { toast('Preencha e-mail e senha'); return }
+    if (tab === 'signup' && !nome.trim()) { toast('Informe seu nome'); return }
+    if (tab === 'signup' && senha.length < 6) { toast('A senha precisa de ao menos 6 caracteres'); return }
+    setBusy(true)
+    try {
+      if (tab === 'login') {
+        await signIn({ email, password: senha })
+        // sessão muda -> App troca para o app automaticamente
+      } else {
+        const { needsConfirm } = await signUp({ nome, telefone, email, password: senha })
+        if (needsConfirm) {
+          toast('Enviamos um e-mail de confirmação. Confirme para entrar 💛')
+          setTab('login'); setSenha('')
+        } else {
+          toast(`Bem-vinda, ${nome.trim()}! 💛`)
+        }
+      }
+    } catch (e) {
+      toast(traduzErro(e?.message))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onTelefone = e => setTelefone(maskPhone(e.target.value))
+
+  const recuperar = async () => {
+    if (!email.trim()) { toast('Digite seu e-mail para recuperar a senha'); return }
+    try { await resetPassword(email); toast('Enviamos um link de recuperação para o seu e-mail') }
+    catch (e) { toast(traduzErro(e?.message)) }
+  }
 
   if (step === 'splash')
     return (
@@ -70,6 +112,7 @@ export default function Intro({ go, onAdmin }) {
   }
 
   // auth
+  const onEnter = e => e.key === 'Enter' && submit()
   return (
     <div className="auth">
       <div className="auth-hero">
@@ -84,14 +127,21 @@ export default function Intro({ go, onAdmin }) {
       <div className="auth-body">
         {tab === 'signup' && (
           <>
-            <div className="field"><label>Nome completo</label><input placeholder="Seu nome" /></div>
-            <div className="field"><label>Telefone</label><input type="tel" inputMode="tel" placeholder="(41) 99999-9999" /></div>
+            <div className="field"><label>Nome completo</label>
+              <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome" /></div>
+            <div className="field"><label>Telefone</label>
+              <input type="tel" inputMode="tel" value={telefone} onChange={onTelefone} placeholder="(41) 99999-9999" maxLength={16} /></div>
           </>
         )}
-        <div className="field"><label>E-mail</label><input type="email" defaultValue={tab === 'login' ? 'paula@email.com' : ''} placeholder="voce@email.com" /></div>
-        <div className="field"><label>Senha</label><input type="password" placeholder="••••••••" /></div>
-        <button className="btn" onClick={() => { toast('Bem-vinda, Paula! 💛'); go('home') }}>
-          {tab === 'login' ? 'Entrar' : 'Criar minha conta'}
+        <div className="field"><label>E-mail</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={onEnter} placeholder="voce@email.com" /></div>
+        <div className="field"><label>Senha</label>
+          <input type="password" value={senha} onChange={e => setSenha(e.target.value)} onKeyDown={onEnter} placeholder="••••••••" /></div>
+        {tab === 'login' && (
+          <button className="ghostlink" style={{ marginBottom: 6 }} onClick={recuperar}>Esqueci minha senha</button>
+        )}
+        <button className="btn" onClick={submit} disabled={busy}>
+          {busy ? <><Loader2 size={16} className="spin" /> Aguarde…</> : (tab === 'login' ? 'Entrar' : 'Criar minha conta')}
         </button>
         <div className="auth-div">Conheça também</div>
         <div className="auth-social">
@@ -104,4 +154,25 @@ export default function Intro({ go, onAdmin }) {
       </div>
     </div>
   )
+}
+
+// máscara de telefone BR: (41) 99999-9999
+function maskPhone(v) {
+  const d = String(v).replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d.length ? `(${d}` : ''
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
+function traduzErro(msg = '') {
+  const m = msg.toLowerCase()
+  if (m.includes('rate limit')) return 'Muitas tentativas agora há pouco. Aguarde alguns minutos e tente de novo.'
+  if (m.includes('invalid login')) return 'E-mail ou senha incorretos'
+  if (m.includes('already registered') || m.includes('already been registered')) return 'Este e-mail já tem conta. Faça login.'
+  if (m.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar (ou desligue a confirmação no Supabase)'
+  if (m.includes('invalid') && m.includes('email')) return 'E-mail inválido'
+  if (m.includes('password')) return 'Senha inválida (mínimo 6 caracteres)'
+  if (m.includes('supabase não configurado')) return msg
+  return msg || 'Algo deu errado. Tente novamente.'
 }

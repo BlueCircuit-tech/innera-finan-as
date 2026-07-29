@@ -188,6 +188,20 @@ h1,h2,h3,h4,h5{font-weight:600;letter-spacing:-.01em}
 .field input::placeholder,.field textarea::placeholder{color:var(--faint)}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(203,166,98,.14)}
 
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* campo de dinheiro (máscara de centavos) */
+.moneyinput{display:flex;align-items:center;gap:8px;padding:14px 15px;border-radius:15px;
+  background:var(--surface-2);border:1px solid var(--line-2);transition:border .15s,box-shadow .15s}
+.moneyinput:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(203,166,98,.14)}
+.moneyinput .cur{font-size:14px;font-weight:700;color:var(--muted)}
+.moneyinput input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--ink);font-size:16px;font-weight:600}
+.moneyinput input::placeholder{color:var(--faint);font-weight:500}
+.moneyinput.big{justify-content:center;border:0;background:none;box-shadow:none;padding:8px 0 20px}
+.moneyinput.big .cur{font-size:15px}
+.moneyinput.big input{flex:0 1 auto;text-align:center;font-family:var(--fd);font-size:44px;font-weight:600;letter-spacing:-.02em}
+
 .meter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
 .meter i{display:block;height:100%;border-radius:99px;background:var(--grad-gold)}
 .meter i.over{background:linear-gradient(90deg,var(--crit),#F0A99C)}

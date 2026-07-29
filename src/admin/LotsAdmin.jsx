@@ -3,6 +3,7 @@ import { Plus, ArrowLeft, Star, Loader2, ImagePlus } from 'lucide-react'
 import { useToast, fmt0 } from '../store.jsx'
 import { adminLots, createLot, updateLot, deleteLot, addLotPhoto, deleteLotPhoto } from '../api.js'
 import { Field, ImageUpload, DeleteButton } from './widgets.jsx'
+import MoneyInput from '../components/MoneyInput.jsx'
 
 const CATEGORIAS = ['Imóveis', 'Veículos', 'Eletrônicos', 'Joias', 'Máquinas']
 const RISCOS = ['Baixo', 'Médio', 'Alto']
@@ -139,9 +140,9 @@ export default function LotsAdmin() {
         <Field label="Situação" wide><input value={form.status || ''} onChange={e => set('status', e.target.value)} placeholder="Ocupado · Venda direta" /></Field>
         <Field label="Descrição" wide><textarea rows={3} value={form.descricao || ''} onChange={e => set('descricao', e.target.value)} /></Field>
 
-        <Field label="Valor de mercado (R$)"><input type="number" value={form.valor_mercado} onChange={e => set('valor_mercado', e.target.value)} /></Field>
-        <Field label="Preço atual (R$)"><input type="number" value={form.preco_atual} onChange={e => set('preco_atual', e.target.value)} /></Field>
-        <Field label="Incremento (R$)"><input type="number" value={form.incremento} onChange={e => set('incremento', e.target.value)} /></Field>
+        <Field label="Valor de mercado"><MoneyInput value={Number(form.valor_mercado) || 0} onChange={v => set('valor_mercado', v)} /></Field>
+        <Field label="Preço atual"><MoneyInput value={Number(form.preco_atual) || 0} onChange={v => set('preco_atual', v)} /></Field>
+        <Field label="Incremento"><MoneyInput value={Number(form.incremento) || 0} onChange={v => set('incremento', v)} /></Field>
         <Field label="Nº de lances"><input type="number" value={form.lances} onChange={e => set('lances', e.target.value)} /></Field>
         <Field label="Rentabilidade est."><input value={form.rentabilidade || ''} onChange={e => set('rentabilidade', e.target.value)} placeholder="32%" /></Field>
         <Field label="Nível de risco">

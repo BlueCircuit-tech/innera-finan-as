@@ -1,20 +1,26 @@
 import { useState } from 'react'
-import { LogOut, Gavel, FileText, GraduationCap, Lock } from 'lucide-react'
+import { LogOut, Gavel, FileText, GraduationCap, Users, Lock } from 'lucide-react'
 import { useToast, useToastMsg } from '../store.jsx'
 import { Toast } from '../components/ui.jsx'
 import { hasSupabase } from '../supabase.js'
 import LotsAdmin from './LotsAdmin.jsx'
 import ArticlesAdmin from './ArticlesAdmin.jsx'
 import MediaAdmin from './MediaAdmin.jsx'
+import UsersAdmin from './UsersAdmin.jsx'
 import './admin.css'
 
 const PW = import.meta.env.VITE_ADMIN_PASSWORD || 'innera2026'
-const TABS = [['lots', 'Leilões', Gavel], ['articles', 'Artigos', FileText], ['media', 'Aprender', GraduationCap]]
+const TABS = [
+  ['users', 'Usuários', Users],
+  ['lots', 'Leilões', Gavel],
+  ['articles', 'Artigos', FileText],
+  ['media', 'Aprender', GraduationCap],
+]
 
 export default function Admin({ onExit }) {
   const [authed, setAuthed] = useState(false)
   const [pw, setPw] = useState('')
-  const [tab, setTab] = useState('lots')
+  const [tab, setTab] = useState('users')
   const toast = useToast()
   const toastMsg = useToastMsg()
 
@@ -58,6 +64,7 @@ export default function Admin({ onExit }) {
       </nav>
 
       <main className="adm-main">
+        {tab === 'users' && <UsersAdmin />}
         {tab === 'lots' && <LotsAdmin />}
         {tab === 'articles' && <ArticlesAdmin />}
         {tab === 'media' && <MediaAdmin />}

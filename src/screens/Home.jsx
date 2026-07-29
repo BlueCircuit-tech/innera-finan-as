@@ -1,16 +1,18 @@
 import { motion } from 'framer-motion'
-import { Bell, Sparkles, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { Bell, Sparkles, ArrowRight, ArrowUpRight, LogOut } from 'lucide-react'
 import { useStore, useToast, fmt, fmt0 } from '../store.jsx'
+import { useAuth } from '../auth.jsx'
 import { CountUp, Meter } from '../components/ui.jsx'
 import LotCard from '../components/LotCard.jsx'
 
 export default function Home({ go }) {
   const { state } = useStore()
   const toast = useToast()
+  const { signOut } = useAuth()
   const orcado = state.cats.reduce((a, c) => a + c.plan, 0)
   const gasto = state.cats.reduce((a, c) => a + c.gasto, 0)
   const disp = Math.max(0, orcado - gasto)
-  const sobra = state.sobras[state.sobras.length - 1][1]
+  const sobra = state.sobras.length ? state.sobras[state.sobras.length - 1][1] : 0
 
   return (
     <div className="pb">
@@ -25,8 +27,11 @@ export default function Home({ go }) {
             <span>Bom dia,</span>
             <b>{state.user.nome}</b>
           </div>
-          <button className="hero-icon" onClick={() => toast('Central de notificações fora do escopo do protótipo')}>
+          <button className="hero-icon" onClick={() => toast('Central de notificações em breve')}>
             <Bell size={18} /><i className="badge" />
+          </button>
+          <button className="hero-icon" onClick={signOut} aria-label="Sair">
+            <LogOut size={18} />
           </button>
         </div>
 
@@ -62,9 +67,10 @@ export default function Home({ go }) {
           <button className="link" onClick={() => go('budget')}>Ajustar <ArrowUpRight size={14} /></button>
         </div>
         <div className="card" style={{ padding: '8px 18px' }}>
+          {state.cats.length === 0 && <div className="home-empty">Crie categorias no seu orçamento para acompanhar aqui.</div>}
           {state.cats.slice(0, 5).map(c => {
-            const pct = Math.round((c.gasto / c.plan) * 100)
-            const over = c.gasto > c.plan
+            const pct = c.plan > 0 ? Math.round((c.gasto / c.plan) * 100) : (c.gasto > 0 ? 100 : 0)
+            const over = c.gasto > c.plan && c.plan > 0
             return (
               <div className="catrow" key={c.id}>
                 <div className="tile">{c.ico}</div>
@@ -83,9 +89,10 @@ export default function Home({ go }) {
 
         <div className="sectiontitle">
           <h3>Últimas transações</h3>
-          <button className="link" onClick={() => toast('Histórico completo fora do escopo do protótipo')}>Ver todas <ArrowUpRight size={14} /></button>
+          <button className="link" onClick={() => go('add')}>Registrar <ArrowUpRight size={14} /></button>
         </div>
         <div className="card" style={{ padding: '8px 18px' }}>
+          {state.txs.length === 0 && <div className="home-empty">Nenhuma transação ainda. Toque no + para registrar.</div>}
           {state.txs.slice(0, 4).map((t, i) => {
             const c = state.cats.find(x => x.id === t.cat)
             return (

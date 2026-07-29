@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Home as HomeIcon, Wallet, Plus, Gavel, GraduationCap, Signal, Wifi, BatteryFull } from 'lucide-react'
+import { AuthProvider, useAuth } from './auth.jsx'
 import { StoreProvider, useToastMsg } from './store.jsx'
 import { Toast } from './components/ui.jsx'
 
@@ -26,16 +27,17 @@ const APP_SCREENS = ['home', 'budget', 'auctions', 'learn', 'sobra', 'mybids', '
 const NAV_TAB = { home: 'home', budget: 'budget', auctions: 'auctions', mybids: 'auctions', learn: 'learn', article: 'learn' }
 
 function Shell({ onAdmin }) {
-  const [route, setRoute] = useState({ id: 'intro', prev: null })
+  const { session, loading } = useAuth()
+  const [route, setRoute] = useState({ id: 'home', prev: null })
   const toastMsg = useToastMsg()
 
   const go = (id, extra = {}) => setRoute(r => ({ id, prev: r.id, ...extra }))
 
-  const showNav = APP_SCREENS.includes(route.id)
+  const loggedIn = !!session
+  const showNav = loggedIn && APP_SCREENS.includes(route.id)
   const activeTab = NAV_TAB[route.id]
 
   const screens = {
-    intro: <Intro go={go} onAdmin={onAdmin} />,
     home: <Home go={go} />,
     budget: <Budget go={go} />,
     add: <AddTx go={go} route={route} />,
@@ -47,6 +49,10 @@ function Shell({ onAdmin }) {
     article: <Article go={go} route={route} />,
   }
 
+  // deslogado → tela de login/onboarding DENTRO da moldura mobile (como antes)
+  const key = loading ? 'loading' : loggedIn ? route.id : 'intro'
+  const content = loading ? null : loggedIn ? (screens[route.id] || <Home go={go} />) : <Intro onAdmin={onAdmin} />
+
   return (
     <div className="stage">
       <div className="device">
@@ -57,16 +63,14 @@ function Shell({ onAdmin }) {
         </div>
 
         <div className="viewport">
-          {/* keyed remount: React unmounts the old screen instantly — enter-only
-              animation, so we never depend on exit-completion callbacks */}
           <motion.div
-            key={route.id}
+            key={key}
             className="screen"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            {screens[route.id]}
+            {content}
           </motion.div>
         </div>
 
@@ -101,14 +105,16 @@ function NavBtn({ active, label, Icon, onClick }) {
 }
 
 export default function App() {
-  const [view, setView] = useState(() =>
-    new URLSearchParams(window.location.search).has('admin') ? 'admin' : 'user'
+  const [admin, setAdmin] = useState(() =>
+    new URLSearchParams(window.location.search).has('admin')
   )
   return (
-    <StoreProvider>
-      {view === 'admin'
-        ? <Admin onExit={() => setView('user')} />
-        : <Shell onAdmin={() => setView('admin')} />}
-    </StoreProvider>
+    <AuthProvider>
+      <StoreProvider>
+        {admin
+          ? <Admin onExit={() => setAdmin(false)} />
+          : <Shell onAdmin={() => setAdmin(true)} />}
+      </StoreProvider>
+    </AuthProvider>
   )
 }

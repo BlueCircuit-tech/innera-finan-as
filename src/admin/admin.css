@@ -53,6 +53,9 @@
 .adm-row-info a{color:var(--gold-2);font-weight:600;display:inline-flex;align-items:center;gap:3px}
 .adm-row-actions{display:flex;align-items:center;gap:6px;flex:none}
 .adm-confirm{display:inline-flex;gap:6px}
+.adm-user-meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:3px}
+.adm-user-meta span{display:inline-flex;align-items:center;gap:4px}
+.adm-user-since{display:block;margin-top:2px;font-size:10.5px;color:var(--muted);opacity:.75}
 
 /* buttons */
 .adm-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 18px;border-radius:13px;

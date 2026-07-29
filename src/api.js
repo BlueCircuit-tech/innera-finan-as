@@ -1,7 +1,6 @@
 import { supabase } from './supabase.js'
+import { DEFAULT_CATS } from './data.js'
 
-// Usuária demo (mesmo id do seed em supabase/init.sql)
-const DEMO = '11111111-1111-1111-1111-111111111111'
 const PH = ['ph-a', 'ph-b', 'ph-c', 'ph-d', 'ph-e']
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -21,96 +20,102 @@ function fmtDate(iso) {
   return `${String(d.getDate()).padStart(2, '0')} ${MESES[d.getMonth()]}`
 }
 
-/* ---- READ: busca tudo e mapeia para o formato do app ---- */
-export async function fetchAll() {
-  if (!supabase) return null
+/* ---- Garante perfil + categorias padrão no primeiro acesso do usuário ----
+   Roda no login. Assim funciona mesmo sem trigger no banco (confirmação por
+   e-mail cria o usuário fora do navegador). Idempotente. */
+export async function ensureUserSetup(user) {
+  if (!supabase || !user) return
+  const { data: prof } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+  if (prof) return
+  const meta = user.user_metadata || {}
+  const base = {
+    id: user.id,
+    nome: (meta.nome || '').trim() || (user.email || '').split('@')[0],
+    email: user.email,
+    renda: 0,
+    saldo: 0,
+    avatar_emoji: '👩🏻',
+  }
+  // tenta com telefone; se a coluna ainda não existir no banco, grava sem ela
+  let ins = await supabase.from('profiles').insert({ ...base, telefone: (meta.telefone || '').trim() || null })
+  if (ins.error && /telefone/i.test(ins.error.message || '')) {
+    ins = await supabase.from('profiles').insert(base)
+  }
+  if (ins.error) { console.warn('[Innera] criar perfil falhou:', ins.error.message); return }
+
+  const cats = DEFAULT_CATS.map(c => ({
+    id: crypto.randomUUID(), user_id: user.id,
+    nome: c.nome, emoji: c.emoji, planejado: 0, gasto: 0, posicao: c.posicao, em_transacoes: c.em_transacoes,
+  }))
+  const { error } = await supabase.from('categories').insert(cats)
+  if (error) console.warn('[Innera] criar categorias falhou:', error.message)
+}
+
+/* ---- READ: busca tudo do usuário + conteúdo público, mapeia p/ o app ---- */
+export async function fetchAll(userId) {
+  if (!supabase || !userId) return null
   try {
     const [profile, cats, txs, lots, photos, docs, bids, favs, arts, meth, tracks, media] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', DEMO).single(),
-      supabase.from('categories').select('*').eq('user_id', DEMO).order('posicao'),
-      supabase.from('transactions').select('*').eq('user_id', DEMO).order('data', { ascending: false }),
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      supabase.from('categories').select('*').eq('user_id', userId).order('posicao'),
+      supabase.from('transactions').select('*').eq('user_id', userId).order('data', { ascending: false }),
       supabase.from('lots').select('*').order('id'),
       supabase.from('lot_photos').select('*').order('posicao'),
       supabase.from('lot_documents').select('*').order('posicao'),
-      supabase.from('lot_bids').select('*').order('valor', { ascending: false }),
-      supabase.from('favorites').select('lot_id').eq('user_id', DEMO),
+      supabase.from('lot_bids').select('*').eq('user_id', userId).order('valor', { ascending: false }),
+      supabase.from('favorites').select('lot_id').eq('user_id', userId),
       supabase.from('articles').select('*').eq('publicado', true).order('posicao'),
       supabase.from('methodology_steps').select('*').order('passo'),
       supabase.from('learning_tracks').select('*').order('posicao'),
       supabase.from('media_items').select('*').eq('publicado', true).order('posicao'),
     ])
-    if (lots.error || cats.error) return null
 
     const photosByLot = groupBy(photos.data || [], 'lot_id')
     const docsByLot = groupBy(docs.data || [], 'lot_id')
     const bidsByLot = groupBy(bids.data || [], 'lot_id')
 
     const mappedLots = (lots.data || []).map((l, i) => ({
-      id: l.id,
-      cat: l.categoria,
-      ico: l.emoji,
-      image_url: l.image_url,
-      ph: PH[i % PH.length],
-      reco: l.recomendado,
-      nome: l.nome,
-      specs: l.specs,
-      status: l.status,
-      desc: l.descricao,
-      aval: Number(l.valor_mercado),
-      lance: Number(l.preco_atual),
-      inc: Number(l.incremento),
-      fim: countdown(l.ends_at),
-      bids: l.lances,
-      rentab: l.rentabilidade,
-      risco: l.risco,
-      revenda: l.revenda,
+      id: l.id, cat: l.categoria, ico: l.emoji, image_url: l.image_url, ph: PH[i % PH.length],
+      reco: l.recomendado, nome: l.nome, specs: l.specs, status: l.status, desc: l.descricao,
+      aval: Number(l.valor_mercado), lance: Number(l.preco_atual), inc: Number(l.incremento),
+      fim: countdown(l.ends_at), bids: l.lances, rentab: l.rentabilidade, risco: l.risco, revenda: l.revenda,
       ia: l.analise_ia,
       fotos: (photosByLot[l.id] || []).map(p => ({ emoji: p.emoji, image_url: p.image_url })),
       docs: (docsByLot[l.id] || []).map(d => d.nome),
     }))
 
     const bidHistory = {}
-    for (const [lotId, arr] of Object.entries(bidsByLot)) {
+    for (const [lotId, arr] of Object.entries(bidsByLot))
       bidHistory[lotId] = arr.map(b => [b.bidder_name, Number(b.valor).toLocaleString('pt-BR'), b.is_me])
-    }
 
-    // myBids: derivado dos lances "Você"
-    const myBids = mappedLots
-      .map(l => {
-        const mine = (bidsByLot[l.id] || []).filter(b => b.is_me).map(b => Number(b.valor))
-        if (!mine.length) return null
-        const meu = Math.max(...mine)
-        return { lot: l.id, meu, status: meu >= l.lance ? 'vencendo' : 'superada' }
-      })
-      .filter(Boolean)
+    const myBids = mappedLots.map(l => {
+      const mine = (bidsByLot[l.id] || []).filter(b => b.is_me).map(b => Number(b.valor))
+      if (!mine.length) return null
+      const meu = Math.max(...mine)
+      return { lot: l.id, meu, status: meu >= l.lance ? 'vencendo' : 'superada' }
+    }).filter(Boolean)
 
     const mappedCats = (cats.data || []).map(c => ({
-      id: c.id,
-      nome: c.nome,
-      ico: c.emoji,
-      image_url: c.image_url,
-      plan: Number(c.planejado),
-      gasto: Number(c.gasto),
-      em_transacoes: c.em_transacoes,
+      id: c.id, nome: c.nome, ico: c.emoji, image_url: c.image_url,
+      plan: Number(c.planejado), gasto: Number(c.gasto), em_transacoes: c.em_transacoes,
     }))
 
+    // guardamos o ISO cru (iso) p/ derivar saldo/gasto por mês; `data` é só exibição
     const mappedTxs = (txs.data || []).map(t => ({
-      tipo: t.tipo,
-      val: Number(t.valor),
-      cat: t.category_id || 'renda',
-      desc: t.descricao,
-      data: fmtDate(t.data),
+      id: t.id, tipo: t.tipo, val: Number(t.valor),
+      cat: t.category_id || 'renda', desc: t.descricao, iso: t.data, data: fmtDate(t.data),
     }))
 
     const data = {
       user: {
-        nome: profile.data?.nome || 'Paula',
+        id: userId,
+        nome: profile.data?.nome || 'Você',
         email: profile.data?.email,
+        telefone: profile.data?.telefone,
         avatar_url: profile.data?.avatar_url,
         avatar_emoji: profile.data?.avatar_emoji || '👩🏻',
       },
-      renda: Number(profile.data?.renda ?? 6500),
-      saldo: Number(profile.data?.saldo ?? 0),
+      renda: Number(profile.data?.renda ?? 0),
       cats: mappedCats,
       txs: mappedTxs,
       lots: mappedLots,
@@ -129,53 +134,56 @@ export async function fetchAll() {
     }))
     return data
   } catch (e) {
-    console.warn('[Innera] fetchAll falhou, usando mock:', e?.message)
+    console.warn('[Innera] fetchAll falhou:', e?.message)
     return null
   }
 }
 
-/* ---- WRITE: persiste as mutações (best-effort, silencioso) ---- */
-export async function persist(action, prev) {
-  if (!supabase) return
+/* ---- WRITE: persiste as mutações do usuário logado ---- */
+export async function persist(action, prev, userId) {
+  if (!supabase || !userId) return
   try {
     switch (action.type) {
       case 'ADD_TX': {
         const { tipo, val, cat, desc, date } = action
         const dia = date || new Date().toISOString().slice(0, 10)
-        await supabase.from('transactions').insert({
-          user_id: DEMO, tipo, valor: val,
+        // saldo e gasto são DERIVADOS das transações — só inserimos a transação.
+        // Usa o mesmo id do estado local p/ manter consistência (id opcional).
+        const row = {
+          user_id: userId, tipo, valor: val,
           category_id: tipo === 'out' ? cat : null, descricao: desc, data: dia,
-        })
-        const saldo = tipo === 'in' ? prev.saldo + val : prev.saldo - val
-        await supabase.from('profiles').update({ saldo }).eq('id', DEMO)
-        if (tipo === 'out') {
-          const c = prev.cats.find(x => x.id === cat)
-          if (c) await supabase.from('categories').update({ gasto: c.gasto + val }).eq('id', cat)
         }
+        if (action.id) row.id = action.id
+        await supabase.from('transactions').insert(row)
+        break
+      }
+      case 'DELETE_TX': {
+        if (action.id) await supabase.from('transactions').delete().eq('id', action.id).eq('user_id', userId)
+        break
+      }
+      case 'SET_RENDA': {
+        await supabase.from('profiles').update({ renda: action.val }).eq('id', userId)
         break
       }
       case 'TOGGLE_FAV': {
         if (prev.favs.includes(action.id))
-          await supabase.from('favorites').delete().eq('user_id', DEMO).eq('lot_id', action.id)
+          await supabase.from('favorites').delete().eq('user_id', userId).eq('lot_id', action.id)
         else
-          await supabase.from('favorites').insert({ user_id: DEMO, lot_id: action.id })
-        break
-      }
-      case 'PLACE_BID': {
-        const l = prev.lots.find(x => x.id === action.id)
-        await supabase.from('lot_bids').insert({ lot_id: action.id, user_id: DEMO, bidder_name: 'Você', valor: action.val, is_me: true })
-        await supabase.from('lots').update({ preco_atual: action.val, lances: (l?.bids || 0) + 1 }).eq('id', action.id)
+          await supabase.from('favorites').insert({ user_id: userId, lot_id: action.id })
         break
       }
       case 'BUMP_CAT': {
         const c = prev.cats[action.i]
-        if (c && !String(c.id).startsWith('c')) // ignora ids mock
-          await supabase.from('categories').update({ planejado: Math.max(0, c.plan + action.delta) }).eq('id', c.id)
+        if (c) await supabase.from('categories').update({ planejado: Math.max(0, c.plan + action.delta) }).eq('id', c.id)
+        break
+      }
+      case 'SET_CAT_PLAN': {
+        await supabase.from('categories').update({ planejado: Math.max(0, action.val) }).eq('id', action.id)
         break
       }
       case 'ADD_CAT': {
         await supabase.from('categories').insert({
-          id: action.id, user_id: DEMO, nome: action.nome, emoji: '🏷️',
+          id: action.id, user_id: userId, nome: action.nome, emoji: '🏷️',
           planejado: action.val, gasto: 0, posicao: prev.cats.length, em_transacoes: true,
         })
         break
@@ -194,10 +202,10 @@ function groupBy(arr, key) {
    ADMIN — CRUD + upload de imagens (Storage)
    ===================================================================== */
 function req() { if (!supabase) throw new Error('Supabase não configurado (.env).') }
-// PostgREST usa 'PGRST205' (tabela fora do schema cache); Postgres cru usa '42P01'
-function isMissingTable(error) {
-  return !!error && (error.code === 'PGRST205' || error.code === '42P01' ||
-    /could not find the table|does not exist/i.test(error.message || ''))
+// PostgREST usa 'PGRST205'/'PGRST202'; Postgres cru usa '42P01'/'42883'
+function isMissing(error) {
+  return !!error && (['PGRST205', 'PGRST202', '42P01', '42883'].includes(error.code) ||
+    /could not find|does not exist/i.test(error.message || ''))
 }
 
 export async function uploadImage(bucket, file) {
@@ -207,6 +215,24 @@ export async function uploadImage(bucket, file) {
   const { error } = await supabase.storage.from(bucket).upload(path, file, { cacheControl: '3600', upsert: false })
   if (error) throw error
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
+/* ---- Usuários (admin) — via funções security-definer (ver supabase/auth.sql) ---- */
+export async function adminListUsers() {
+  req()
+  const { data, error } = await supabase.rpc('admin_list_users')
+  if (error) { if (isMissing(error)) return null; throw error }
+  return data || []
+}
+export async function adminDeleteUser(id) {
+  req()
+  const { error } = await supabase.rpc('admin_delete_user', { uid: id })
+  if (error) throw error
+}
+export async function adminUpdateUser(id, { nome, telefone }) {
+  req()
+  const { error } = await supabase.rpc('admin_update_user', { uid: id, novo_nome: nome, novo_telefone: telefone })
+  if (error) throw error
 }
 
 /* ---- Leilões ---- */
@@ -234,13 +260,13 @@ export async function createArticle(row) { req(); const { error } = await supaba
 export async function updateArticle(id, row) { req(); const { error } = await supabase.from('articles').update(row).eq('id', id); if (error) throw error }
 export async function deleteArticle(id) { req(); const { error } = await supabase.from('articles').delete().eq('id', id); if (error) throw error }
 
-/* ---- Mídia (podcasts / vídeos) — tabela media_items (ver supabase/admin.sql) ---- */
+/* ---- Mídia (podcasts / vídeos) ---- */
 export async function fetchMedia(tipo) {
   req()
   let q = supabase.from('media_items').select('*').order('posicao')
   if (tipo) q = q.eq('tipo', tipo)
   const { data, error } = await q
-  if (error) { if (isMissingTable(error)) return null; throw error }
+  if (error) { if (isMissing(error)) return null; throw error }
   return data || []
 }
 export async function createMedia(row) { req(); const { error } = await supabase.from('media_items').insert(row); if (error) throw error }

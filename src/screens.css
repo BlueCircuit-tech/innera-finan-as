@@ -58,6 +58,7 @@
 .saldo .k{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:rgba(243,241,231,.55)}
 .saldo .v{font-size:38px;font-weight:600;margin:5px 0 3px}
 .saldo .d{font-size:12.5px;color:rgba(243,241,231,.65)}
+.home-empty{padding:16px 2px;font-size:12.5px;color:var(--muted);text-align:center}
 .hero-pills{display:flex;gap:8px;margin-top:18px}
 .hpill{flex:1;background:rgba(255,255,255,.08);border-radius:15px;padding:11px 13px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
 .hpill .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:rgba(243,241,231,.55)}
@@ -85,6 +86,9 @@
 .bcell{flex:1;background:var(--surface);border-radius:var(--r-sm);padding:13px 14px;box-shadow:var(--sh-1),var(--hi);border:1px solid var(--hair)}
 .bcell .k{font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:var(--muted)}
 .bcell .v{font-size:17px;font-weight:700;margin-top:4px}
+.bcell.as-btn{cursor:pointer;text-align:left;transition:border-color .15s}
+.bcell.as-btn:active{border-color:var(--gold)}
+.bcell.as-btn .k{display:inline-flex;align-items:center;gap:4px}
 .critc{color:var(--crit)}
 .alloc{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--hair)}
 .alloc:last-child{border-bottom:0}
@@ -93,6 +97,8 @@
 .stepper{display:flex;align-items:center;background:var(--surface-2);border-radius:13px;box-shadow:inset 0 0 0 1px var(--line)}
 .stepper button{width:36px;height:38px;display:grid;place-items:center;color:var(--ink-2)}
 .stepper .sv{min-width:80px;text-align:center;font-size:13.5px;font-weight:700}
+.stepper .sv.as-btn{cursor:pointer;color:var(--ink);padding:0 4px}
+.stepper .sv.as-btn:active{color:var(--gold)}
 .principio{display:flex;gap:11px;background:var(--surface-2);border-radius:var(--r-sm);padding:14px 15px;margin-top:16px;
   font-size:12.5px;color:var(--ink-2);line-height:1.55;box-shadow:inset 0 0 0 1px var(--line)}
 .principio b{color:var(--ink)}
