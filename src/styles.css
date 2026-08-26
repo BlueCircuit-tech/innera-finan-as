@@ -118,6 +118,8 @@ h1,h2,h3,h4,h5{font-weight:600;letter-spacing:-.01em}
 .statusbar .r{display:flex;gap:6px;align-items:center}
 
 /* ---------- screens ---------- */
+.offline-bar{flex:none;z-index:60;display:flex;gap:7px;align-items:flex-start;margin:0 14px 8px;padding:9px 12px;border-radius:12px;line-height:1.35;font-size:12px;font-weight:600;color:#3b1f06;background:#f6c96a;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.offline-bar svg{flex:none;margin-top:1px}
 .viewport{flex:1;position:relative;overflow:hidden}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
 .screen::-webkit-scrollbar{display:none}

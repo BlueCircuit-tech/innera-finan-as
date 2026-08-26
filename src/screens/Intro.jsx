@@ -153,6 +153,10 @@ function maskPhone(v) {
 
 function traduzErro(msg = '') {
   const m = msg.toLowerCase()
+  // falha de rede: o app precisa dizer que o servidor caiu, e não "algo deu errado"
+  if (/failed to fetch|networkerror|load failed|network request failed|fetch failed/.test(m))
+    return 'Servidor indisponível no momento. Tente de novo em instantes.'
+  if (m.includes('invalid api key')) return 'Configuração pendente: chave do Supabase inválida.'
   if (m.includes('invalid_login')) return 'E-mail ou senha incorretos'
   if (m.includes('email_exists')) return 'Este e-mail já tem conta. Faça login.'
   if (m.includes('senha_curta')) return 'A senha precisa de ao menos 6 caracteres'

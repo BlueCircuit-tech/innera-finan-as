@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useState, useCallback, useEffect, useMemo } from 'react'
-import { fetchAll, persist } from './api.js'
+import { fetchAll, persist, describeError } from './api.js'
 import { useAuth } from './auth.jsx'
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
@@ -99,6 +99,8 @@ export function StoreProvider({ children }) {
   const [state, baseDispatch] = useReducer(reducer, EMPTY)
   const [toastMsg, setToastMsg] = useState(null)
   const [loadingData, setLoadingData] = useState(false)
+  // erro de carregamento (ex.: banco fora do ar) — vira aviso na tela
+  const [loadError, setLoadError] = useState(null)
 
   // dados de identidade/renda vêm do login
   useEffect(() => {
@@ -108,22 +110,22 @@ export function StoreProvider({ children }) {
   // (re)carrega as coleções quando o usuário logado muda
   useEffect(() => {
     let alive = true
-    if (!userId) { baseDispatch({ type: 'RESET' }); return }
+    if (!userId) { baseDispatch({ type: 'RESET' }); setLoadError(null); return }
     setLoadingData(true)
+    setLoadError(null)
     ;(async () => {
-      const data = await fetchAll(userId)
-      if (alive && data) baseDispatch({ type: 'HYDRATE', data })
-      if (alive) setLoadingData(false)
+      try {
+        const data = await fetchAll(userId)
+        if (alive && data) baseDispatch({ type: 'HYDRATE', data })
+      } catch (e) {
+        // não silencia: sem isto o app aparece zerado como se os dados tivessem sumido
+        if (alive) setLoadError(describeError(e))
+      } finally {
+        if (alive) setLoadingData(false)
+      }
     })()
     return () => { alive = false }
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // dispatch com persistência best-effort no Supabase (usa o estado anterior + usuário atual)
-  const dispatch = useCallback(action => {
-    baseDispatch(action)
-    if (action.type === 'SET_RENDA') patchUser({ renda: action.val })
-    persist(action, state, userId)
-  }, [state, userId, patchUser])
 
   const toast = useCallback(msg => {
     setToastMsg({ msg, id: Math.random() })
@@ -131,10 +133,18 @@ export function StoreProvider({ children }) {
     toastTimer = setTimeout(() => setToastMsg(null), 2600)
   }, [])
 
+  // dispatch com persistência no Supabase (usa o estado anterior + usuário atual).
+  // Se a gravação falhar a usuária é avisada — o dado só existiria na tela.
+  const dispatch = useCallback(action => {
+    baseDispatch(action)
+    if (action.type === 'SET_RENDA') patchUser({ renda: action.val })
+    persist(action, state, userId).then(err => { if (err) toast('Não foi possível salvar: ' + err) })
+  }, [state, userId, patchUser, toast])
+
   const derived = useMemo(() => withDerived(state), [state])
 
   return (
-    <StoreCtx.Provider value={{ state: derived, dispatch, loadingData }}>
+    <StoreCtx.Provider value={{ state: derived, dispatch, loadingData, loadError }}>
       <ToastCtx.Provider value={{ toast, toastMsg }}>
         {children}
       </ToastCtx.Provider>

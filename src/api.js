@@ -3,6 +3,25 @@ import { supabase } from './supabase.js'
 const PH = ['ph-a', 'ph-b', 'ph-c', 'ph-d', 'ph-e']
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
+/* ---- Erros: separar "banco fora do ar" de "não tem dado" ----
+   Sem isso uma queda de conexão vira tela vazia — que foi o que fez o painel
+   dizer "nenhum usuário cadastrado" enquanto o projeto do Supabase estava fora. */
+export function isOffline(error) {
+  if (!error) return false
+  const m = `${error.message || ''} ${error.details || ''}`.toLowerCase()
+  return error.name === 'TypeError' ||
+    ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(error.code) ||
+    /failed to fetch|networkerror|load failed|fetch failed|network request failed|timeout/.test(m)
+}
+
+export function describeError(error) {
+  if (!error) return ''
+  if (isOffline(error)) return 'Sem conexão com o servidor (banco de dados fora do ar).'
+  if (error.message?.toLowerCase().includes('invalid api key'))
+    return 'Chave do Supabase inválida — confira as variáveis de ambiente.'
+  return error.message || 'Erro desconhecido.'
+}
+
 export function countdown(endsAt) {
   const ms = new Date(endsAt).getTime() - Date.now()
   if (ms <= 0) return 'Encerrado'
@@ -37,6 +56,11 @@ export async function fetchAll(userId) {
       supabase.from('learning_tracks').select('*').order('posicao'),
       supabase.from('media_items').select('*').eq('publicado', true).order('posicao'),
     ])
+
+    // Se as coleções essenciais falharam, NÃO devolvemos um app vazio fingindo
+    // que a usuária não tem nada — quem chamou precisa saber que caiu.
+    const broke = [cats, txs, lots].find(r => r.error)
+    if (broke) { const e = new Error(describeError(broke.error)); e.offline = isOffline(broke.error); throw e }
 
     const photosByLot = groupBy(photos.data || [], 'lot_id')
     const docsByLot = groupBy(docs.data || [], 'lot_id')
@@ -94,13 +118,17 @@ export async function fetchAll(userId) {
     return data
   } catch (e) {
     console.warn('[Innera] fetchAll falhou:', e?.message)
-    return null
+    throw e
   }
 }
 
-/* ---- WRITE: persiste as mutações do usuário logado ---- */
+/* ---- WRITE: persiste as mutações do usuário logado.
+   Devolve null se gravou, ou a mensagem do erro — o store avisa a usuária em
+   vez de deixar o dado só na tela e sumir no próximo carregamento. ---- */
 export async function persist(action, prev, userId) {
-  if (!supabase || !userId) return
+  if (!supabase || !userId) return null
+  // o supabase-js não lança: devolve { error }. Sem isto a falha passava batido.
+  const chk = async p => { const r = await p; if (r?.error) throw r.error; return r }
   try {
     switch (action.type) {
       case 'ADD_TX': {
@@ -113,43 +141,45 @@ export async function persist(action, prev, userId) {
           category_id: tipo === 'out' ? cat : null, descricao: desc, data: dia,
         }
         if (action.id) row.id = action.id
-        await supabase.from('transactions').insert(row)
+        await chk(supabase.from('transactions').insert(row))
         break
       }
       case 'DELETE_TX': {
-        if (action.id) await supabase.from('transactions').delete().eq('id', action.id).eq('user_id', userId)
+        if (action.id) await chk(supabase.from('transactions').delete().eq('id', action.id).eq('user_id', userId))
         break
       }
       case 'SET_RENDA': {
-        await supabase.rpc('app_update_renda', { uid: userId, val: action.val })
+        await chk(supabase.rpc('app_update_renda', { uid: userId, val: action.val }))
         break
       }
       case 'TOGGLE_FAV': {
         if (prev.favs.includes(action.id))
-          await supabase.from('favorites').delete().eq('user_id', userId).eq('lot_id', action.id)
+          await chk(supabase.from('favorites').delete().eq('user_id', userId).eq('lot_id', action.id))
         else
-          await supabase.from('favorites').insert({ user_id: userId, lot_id: action.id })
+          await chk(supabase.from('favorites').insert({ user_id: userId, lot_id: action.id }))
         break
       }
       case 'BUMP_CAT': {
         const c = prev.cats[action.i]
-        if (c) await supabase.from('categories').update({ planejado: Math.max(0, c.plan + action.delta) }).eq('id', c.id)
+        if (c) await chk(supabase.from('categories').update({ planejado: Math.max(0, c.plan + action.delta) }).eq('id', c.id))
         break
       }
       case 'SET_CAT_PLAN': {
-        await supabase.from('categories').update({ planejado: Math.max(0, action.val) }).eq('id', action.id)
+        await chk(supabase.from('categories').update({ planejado: Math.max(0, action.val) }).eq('id', action.id))
         break
       }
       case 'ADD_CAT': {
-        await supabase.from('categories').insert({
+        await chk(supabase.from('categories').insert({
           id: action.id, user_id: userId, nome: action.nome, emoji: '🏷️',
           planejado: action.val, gasto: 0, posicao: prev.cats.length, em_transacoes: true,
-        })
+        }))
         break
       }
     }
+    return null
   } catch (e) {
     console.warn('[Innera] persist falhou:', e?.message)
+    return describeError(e)
   }
 }
 

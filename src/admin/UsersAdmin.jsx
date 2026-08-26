@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Loader2, Mail, Phone, RefreshCw, ArrowLeft } from 'lucide-react'
 import { useToast } from '../store.jsx'
-import { adminListUsers, adminDeleteUser, adminUpdateUser } from '../api.js'
+import { adminListUsers, adminDeleteUser, adminUpdateUser, describeError } from '../api.js'
 import { Field, DeleteButton } from './widgets.jsx'
 
 const fmtData = iso => {
@@ -24,6 +24,7 @@ export default function UsersAdmin() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [missing, setMissing] = useState(false)
+  const [erro, setErro] = useState(null) // falha de conexão/consulta
   const [editing, setEditing] = useState(null) // null | usuário
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -31,11 +32,17 @@ export default function UsersAdmin() {
 
   const load = async () => {
     setLoading(true)
+    setErro(null)
     try {
       const data = await adminListUsers()
       if (data === null) { setMissing(true); setUsers([]) }
       else { setMissing(false); setUsers(data) }
-    } catch (e) { toast('Erro ao carregar: ' + e.message) }
+    } catch (e) {
+      // sem isto a lista caía em "nenhum usuário cadastrado" e escondia a falha
+      const msg = describeError(e)
+      setErro(msg); setUsers([])
+      toast('Erro ao carregar: ' + msg)
+    }
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -87,7 +94,13 @@ export default function UsersAdmin() {
         <button className="adm-btn sm ghost" onClick={load}><RefreshCw size={14} /> Atualizar</button>
       </div>
 
-      {missing ? (
+      {erro ? (
+        <div className="adm-empty">
+          <b>Não foi possível consultar o banco.</b><br />
+          {erro}<br />
+          <small>A lista abaixo está vazia por falha de conexão — não porque não existem cadastros.</small>
+        </div>
+      ) : missing ? (
         <div className="adm-empty">
           As funções de usuários ainda não existem no banco.<br />
           Rode <b>supabase/auth.sql</b> no SQL Editor do Supabase para habilitar esta aba.

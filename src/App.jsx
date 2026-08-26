@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Home as HomeIcon, Wallet, Plus, Gavel, GraduationCap, Signal, Wifi, BatteryFull } from 'lucide-react'
+import { Home as HomeIcon, Wallet, Plus, Gavel, GraduationCap, Signal, Wifi, BatteryFull, WifiOff } from 'lucide-react'
 import { AuthProvider, useAuth } from './auth.jsx'
-import { StoreProvider, useToastMsg } from './store.jsx'
+import { StoreProvider, useToastMsg, useStore } from './store.jsx'
 import { Toast } from './components/ui.jsx'
 
 import Intro from './screens/Intro.jsx'
@@ -30,6 +30,7 @@ function Shell({ onAdmin }) {
   const { session, loading } = useAuth()
   const [route, setRoute] = useState({ id: 'home', prev: null })
   const toastMsg = useToastMsg()
+  const { loadError } = useStore()
 
   const go = (id, extra = {}) => setRoute(r => ({ id, prev: r.id, ...extra }))
 
@@ -61,6 +62,12 @@ function Shell({ onAdmin }) {
           <span>9:41</span>
           <span className="r"><Signal size={15} /><Wifi size={15} /><BatteryFull size={17} /></span>
         </div>
+
+        {loggedIn && loadError && (
+          <div className="offline-bar" role="alert">
+            <WifiOff size={14} /> {loadError} Seus dados não foram apagados — tente novamente em instantes.
+          </div>
+        )}
 
         <div className="viewport">
           <motion.div

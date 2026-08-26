@@ -46,9 +46,40 @@ supabase/init.sql     schema + storage (upload de imagens) + RLS + seed
 
 ## Banco de dados (Supabase)
 
-`supabase/init.sql` cria as tabelas, os buckets de Storage para upload de imagens
-e popula o conteúdo. Cada entidade tem `emoji` (placeholder) e uma coluna `*_url` —
-mostra a imagem quando existir, senão cai no emoji. Cole no **SQL Editor** e RUN.
+Todo o schema vive em `supabase/`. Em um projeto novo, rode os três arquivos no
+**SQL Editor** do Supabase, **nesta ordem** (todos idempotentes — pode rodar de novo):
+
+| # | Arquivo | O que cria |
+|---|---------|-----------|
+| 1 | `supabase/schema.sql` | Tabelas (leilões, artigos, trilhas, categorias, transações…), RLS e os buckets de Storage |
+| 2 | `supabase/auth.sql`   | `app_users` + funções de cadastro/login e do admin |
+| 3 | `supabase/admin.sql`  | `media_items` (podcasts e vídeos) |
+
+Cada entidade tem `emoji` (placeholder) e uma coluna `*_url` — mostra a imagem
+quando existir, senão cai no emoji.
+
+### Recuperação: "sumiram os usuários / só dá erro"
+
+Sintoma: o app dá erro no login/cadastro e o painel admin mostra 0 usuários.
+Quase sempre é o **projeto do Supabase fora do ar** (pausado por inatividade no
+plano free, ou excluído), não perda de dados no app.
+
+Como confirmar em 30 segundos — o host do projeto tem que responder:
+
+```bash
+nslookup SEU-PROJETO.supabase.co
+```
+
+- **Responde um IP** → o projeto existe; veja se está *paused* no dashboard e clique
+  em **Restore** (os dados voltam).
+- **"Non-existent domain"** → o projeto **não existe mais**. Crie um projeto novo,
+  rode os três SQLs acima, e atualize `VITE_SUPABASE_URL` e
+  `VITE_SUPABASE_PUBLISHABLE_KEY` no `.env` **e nas Environment Variables da Vercel**
+  (depois **Redeploy** — o Vite embute essas variáveis no build).
+
+> No plano free o Supabase **pausa** o projeto após ~7 dias sem uso e pode
+> **excluir** projetos pausados por muito tempo. Antes de campanha, confira se o
+> projeto está ativo (ou suba para um plano pago, que não pausa).
 
 ### Autenticação e usuários (obrigatório)
 

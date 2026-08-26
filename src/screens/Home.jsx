@@ -5,6 +5,12 @@ import { useAuth } from '../auth.jsx'
 import { CountUp, Meter } from '../components/ui.jsx'
 import LotCard from '../components/LotCard.jsx'
 
+// mês corrente por extenso — estava fixo em "Julho de 2026" no código
+const mesAtual = () => {
+  const s = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  return s.charAt(0).toUpperCase() + s.slice(1).replace(' de ', ' de ')
+}
+
 export default function Home({ go }) {
   const { state } = useStore()
   const toast = useToast()
@@ -38,7 +44,7 @@ export default function Home({ go }) {
         <div className="saldo">
           <div className="k">Saldo atual</div>
           <div className="v num"><CountUp value={state.saldo} format={fmt} /></div>
-          <div className="d">Julho de 2026 · conta principal</div>
+          <div className="d">{mesAtual()} · conta principal</div>
         </div>
 
         <div className="hero-pills">
